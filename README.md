@@ -19,13 +19,14 @@ git clone git@github.com:HobaiRiku/hosta.git
 cd hosta
 make build
 
-./hosta
+./build/bin/hosta
 ```
 
-也可以直接从源码运行：
+也可以通过 Makefile 从源码运行；它会注入当前 Git 版本、提交和 UTC 构建时间：
 
 ```bash
-go run ./cmd/hosta
+make run
+make print-version
 go run ./cmd/hosta list
 go run ./cmd/hosta show home
 go run ./cmd/hosta doctor
@@ -43,7 +44,7 @@ hosta completion powershell
 
 `hosta connect <TAB>` 与 `hosta show <TAB>` 会从本地 SSH Config 动态补全 Host，不执行网络请求或 `ssh -G`。
 
-首个 Git Tag 发布后，可从 GitHub Releases 下载 macOS、Linux 和 Windows 的 amd64/arm64 归档及 `checksums.txt`。
+首个 Git Tag 发布后，可从 GitHub Releases 下载 macOS、Linux 和 Windows 的 amd64/arm64 归档及 `SHA256SUMS`。
 
 读取其他用户配置入口：
 

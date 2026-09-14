@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 
 	"github.com/HobaiRiku/hosta/internal/app"
-	"github.com/HobaiRiku/hosta/internal/buildinfo"
 	"github.com/HobaiRiku/hosta/internal/launcher"
 	"github.com/HobaiRiku/hosta/internal/openssh"
 	"github.com/HobaiRiku/hosta/internal/sshconfig"
+	"github.com/HobaiRiku/hosta/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,8 @@ type dependencies struct {
 }
 
 type rootOptions struct {
-	configPath string
+	configPath  string
+	showVersion bool
 }
 
 func Execute() error {
@@ -50,16 +51,17 @@ func NewRootCommand() *cobra.Command {
 }
 
 func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command {
-	info := buildinfo.Current()
 	options := &rootOptions{}
 	root := &cobra.Command{
 		Use:           "hosta",
 		Short:         "A fast, interactive SSH host launcher",
-		Version:       info.Version,
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		Args:          exactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if options.showVersion {
+				return writeVersion(cmd.OutOrStdout())
+			}
 			snapshot, err := loadSnapshot(deps, options.configPath)
 			if err != nil {
 				return err
@@ -79,10 +81,10 @@ func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command 
 		},
 	}
 	root.PersistentFlags().StringVar(&options.configPath, "config", defaultConfigPath, "path to the user SSH config")
+	root.Flags().BoolVarP(&options.showVersion, "version", "v", false, "print version and exit")
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return withCode(2, err) })
-	root.SetVersionTemplate("{{.Name}} {{.Version}}\n")
 	root.AddCommand(
-		newVersionCommand(info),
+		newVersionCommand(),
 		newListCommand(deps, options),
 		newShowCommand(deps, options),
 		newDoctorCommand(deps, options),
@@ -93,18 +95,18 @@ func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command 
 	return root
 }
 
-func newVersionCommand(info buildinfo.Info) *cobra.Command {
+func newVersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print version information",
 		Args:  exactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return writeVersion(cmd.OutOrStdout(), info)
+			return writeVersion(cmd.OutOrStdout())
 		},
 	}
 }
 
-func writeVersion(w io.Writer, info buildinfo.Info) error {
-	_, err := fmt.Fprintf(w, "hosta %s\ncommit: %s\nbuilt: %s\n", info.Version, info.Commit, info.Date)
+func writeVersion(w io.Writer) error {
+	_, err := fmt.Fprintln(w, version.String())
 	return err
 }

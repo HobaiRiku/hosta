@@ -4,8 +4,7 @@ project_name: hosta
 
 before:
   hooks:
-    - go mod verify
-    - go test ./...
+    - go mod tidy
 
 builds:
   - id: hosta
@@ -16,11 +15,10 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - >-
-        -s -w
-        -X github.com/HobaiRiku/hosta/internal/buildinfo.Version={{.Version}}
-        -X github.com/HobaiRiku/hosta/internal/buildinfo.Commit={{.Commit}}
-        -X github.com/HobaiRiku/hosta/internal/buildinfo.Date={{.CommitDate}}
+      - -s -w
+      - -X github.com/HobaiRiku/hosta/internal/version.Version={{ .Version }}
+      - -X github.com/HobaiRiku/hosta/internal/version.Commit={{ .Commit }}
+      - -X github.com/HobaiRiku/hosta/internal/version.BuildDate={{ .Date }}
     goos:
       - darwin
       - linux
@@ -43,15 +41,16 @@ archives:
       - CHANGELOG.md
 
 checksum:
-  name_template: checksums.txt
+  name_template: SHA256SUMS
 
 changelog:
+  use: github
   sort: asc
   filters:
     exclude:
       - '^docs:'
       - '^test:'
-      - '^ci:'
+      - '^chore:'
 
 release:
   prerelease: auto
