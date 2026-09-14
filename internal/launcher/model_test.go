@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/HobaiRiku/hosta/internal/host"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestInitialView(t *testing.T) {
@@ -18,7 +19,7 @@ func TestInitialView(t *testing.T) {
 		t.Fatal("launcher must use the alternate screen buffer")
 	}
 	view := result.Content
-	for _, want := range []string{"Hosta", "Search", "2 hosts", "Home Server", "root@home.example.com:22"} {
+	for _, want := range []string{"Hosta", "Search", "2 hosts", "Home Server", "home", "root@home.example.com:22", "personal · home"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("view %q does not contain %q", view, want)
 		}
@@ -66,9 +67,20 @@ func TestEscapeClearsThenQuits(t *testing.T) {
 func TestSmallTerminalUsesCompactRows(t *testing.T) {
 	m := newModel(testIndex(t))
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 30, Height: 10})
-	view := next.(model).View().Content
-	if !strings.Contains(view, "> home") || strings.Contains(view, "root@home.example.com") {
+	view := ansi.Strip(next.(model).View().Content)
+	if !strings.Contains(view, "› home") || strings.Contains(view, "root@home.example.com") {
 		t.Fatalf("compact view = %q", view)
+	}
+}
+
+func TestDefaultRowsUseOneLinePerHost(t *testing.T) {
+	m := newModel(testIndex(t))
+	view := ansi.Strip(m.View().Content)
+	if !strings.Contains(view, "Home Server  home  root@home.example.com:22  personal · home") {
+		t.Fatalf("selected row = %q", view)
+	}
+	if !strings.Contains(view, "路由器  router  192.0.2.1  personal · network") {
+		t.Fatalf("unselected row = %q", view)
 	}
 }
 

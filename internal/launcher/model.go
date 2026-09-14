@@ -11,10 +11,24 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/HobaiRiku/hosta/internal/host"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/term"
 )
 
 var ErrNoTTY = errors.New("interactive mode requires a terminal; use `hosta list` or `hosta connect <host>`")
+
+var (
+	accentStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA"))
+	titleStyle    = accentStyle.Bold(true)
+	nameStyle     = lipgloss.NewStyle().Bold(true)
+	aliasStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#67E8F9"))
+	addressStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#6EE7B7"))
+	metadataStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#94A3B8"))
+	selectedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.Color("#6D28D9")).
+			Bold(true)
+)
 
 type model struct {
 	input    textinput.Model
@@ -29,7 +43,7 @@ type model struct {
 
 func newModel(index *host.Index) model {
 	input := textinput.New()
-	input.Prompt = "Search  "
+	input.Prompt = accentStyle.Render("Search") + "  "
 	input.Placeholder = "type to filter hosts"
 	input.Focus()
 	m := model{input: input, index: index, width: 80, height: 24}
@@ -92,8 +106,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	var content strings.Builder
-	title := lipgloss.NewStyle().Bold(true).Render("Hosta")
-	fmt.Fprintf(&content, "%s%*s\n\n%s\n\n", title, max(1, m.width-lipgloss.Width(title)-12), fmt.Sprintf("%d hosts", m.index.Len()), m.input.View())
+	title := titleStyle.Render("Hosta")
+	count := metadataStyle.Render(fmt.Sprintf("%d hosts", len(m.results)))
+	fmt.Fprintf(&content, "%s%s%s\n\n%s\n\n", title, strings.Repeat(" ", max(1, m.width-lipgloss.Width(title)-lipgloss.Width(count))), count, m.input.View())
 
 	if len(m.results) == 0 {
 		if m.index.Len() == 0 {
@@ -108,7 +123,7 @@ func (m model) View() tea.View {
 		}
 	}
 
-	content.WriteString("\n↑↓ select   Enter connect   Esc clear/quit   Tab details   Ctrl+C quit")
+	content.WriteString("\n" + metadataStyle.Render("↑↓ select  •  Enter connect  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"))
 	view := tea.NewView(content.String())
 	view.AltScreen = true
 	return view
@@ -120,7 +135,11 @@ func (m *model) refresh() {
 }
 
 func (m model) visibleRange() (int, int) {
-	limit := max(1, min(20, m.height-8))
+	reserved := 7
+	if m.details {
+		reserved += 3
+	}
+	limit := max(1, m.height-reserved)
 	start := 0
 	if m.cursor >= limit {
 		start = m.cursor - limit + 1
@@ -130,12 +149,12 @@ func (m model) visibleRange() (int, int) {
 
 func (m model) renderResult(content *strings.Builder, position int) {
 	value := m.results[position].Host
-	prefix := "  "
-	if position == m.cursor {
-		prefix = "> "
-	}
 	if m.width < 40 || m.height < 12 {
-		fmt.Fprintf(content, "%s%s\n", prefix, value.Alias)
+		prefix := "  "
+		if position == m.cursor {
+			prefix = "› "
+		}
+		fmt.Fprintln(content, m.styleRow(prefix+value.Alias, position == m.cursor))
 		return
 	}
 
@@ -143,32 +162,58 @@ func (m model) renderResult(content *strings.Builder, position int) {
 	if label == "" {
 		label = value.Alias
 	}
-	if label == value.Alias {
-		fmt.Fprintf(content, "%s%s\n", prefix, label)
+	address := formatPreview(value.Preview)
+	metadata := hostMetadata(value)
+	selected := position == m.cursor
+	if selected {
+		parts := []string{"›", label}
+		if label != value.Alias {
+			parts = append(parts, value.Alias)
+		}
+		if address != "" {
+			parts = append(parts, address)
+		}
+		if metadata != "" {
+			parts = append(parts, metadata)
+		}
+		fmt.Fprintln(content, m.styleRow(strings.Join(parts, "  "), true))
 	} else {
-		fmt.Fprintf(content, "%s%s  %s\n", prefix, label, value.Alias)
+		parts := []string{"  " + nameStyle.Render(label)}
+		if label != value.Alias {
+			parts = append(parts, aliasStyle.Render(value.Alias))
+		}
+		if address != "" {
+			parts = append(parts, addressStyle.Render(address))
+		}
+		if metadata != "" {
+			parts = append(parts, metadataStyle.Render(metadata))
+		}
+		fmt.Fprintln(content, ansi.Truncate(strings.Join(parts, "  "), m.width, "…"))
 	}
-	if position != m.cursor {
-		return
+	if selected && m.details {
+		if value.Description != "" {
+			fmt.Fprintln(content, metadataStyle.Render("    "+value.Description))
+		}
+		for _, source := range value.Sources {
+			fmt.Fprintln(content, metadataStyle.Render(fmt.Sprintf("    %s:%d", source.File, source.Line)))
+		}
 	}
+}
+
+func (m model) styleRow(value string, selected bool) string {
+	value = ansi.Truncate(value, max(1, m.width-2), "…")
+	if !selected {
+		return value
+	}
+	return selectedStyle.Width(m.width).PaddingLeft(1).Render(value)
+}
+
+func hostMetadata(value host.Host) string {
 	metadata := append([]string(nil), value.Tags...)
 	if value.Group != "" {
 		metadata = append([]string{value.Group}, metadata...)
 	}
-	if len(metadata) > 0 {
-		fmt.Fprintf(content, "    %s\n", strings.Join(metadata, " · "))
-	}
-	if preview := formatPreview(value.Preview); preview != "" {
-		fmt.Fprintf(content, "    %s\n", preview)
-	}
-	if m.details {
-		if value.Description != "" {
-			fmt.Fprintf(content, "    %s\n", value.Description)
-		}
-		for _, source := range value.Sources {
-			fmt.Fprintf(content, "    %s:%d\n", source.File, source.Line)
-		}
-	}
+	return strings.Join(metadata, " · ")
 }
 
 func formatPreview(preview host.Preview) string {
