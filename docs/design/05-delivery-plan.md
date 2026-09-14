@@ -13,7 +13,7 @@
 | M2 Host Index/Search | 已完成 | 统一模型、字段权重、确定性排序与基准测试 |
 | M3 CLI/OpenSSH | 已完成 | list/show/doctor/connect/config、resolve 与平台进程边界 |
 | M4 Interactive Launcher | 已完成 | 实时检索、导航、详情、TTY/小终端降级与选择后连接 |
-| M5 Completion/Release | 下一步 | 尚未开始 |
+| M5 Completion/Release | 已完成 | 四种 Shell 补全、跨平台归档、校验和与 Tag 发布工作流 |
 
 ## V0.1
 
