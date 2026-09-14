@@ -18,7 +18,7 @@ import (
 var ErrNoTTY = errors.New("interactive mode requires a terminal; use `hosta list` or `hosta connect <host>`")
 
 var (
-	accentStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA"))
+	accentStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FB923C"))
 	titleStyle    = accentStyle.Bold(true)
 	nameStyle     = lipgloss.NewStyle().Bold(true)
 	aliasStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#67E8F9"))
@@ -26,7 +26,7 @@ var (
 	metadataStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#94A3B8"))
 	selectedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#6D28D9")).
+			Background(lipgloss.Color("#C2410C")).
 			Bold(true)
 )
 
@@ -167,8 +167,8 @@ func (m model) renderResult(content *strings.Builder, position int) {
 	selected := position == m.cursor
 	if selected {
 		parts := []string{"›", label}
-		if label != value.Alias {
-			parts = append(parts, value.Alias)
+		if aliases := displayAliases(value); aliases != label {
+			parts = append(parts, aliases)
 		}
 		if address != "" {
 			parts = append(parts, address)
@@ -179,8 +179,8 @@ func (m model) renderResult(content *strings.Builder, position int) {
 		fmt.Fprintln(content, m.styleRow(strings.Join(parts, "  "), true))
 	} else {
 		parts := []string{"  " + nameStyle.Render(label)}
-		if label != value.Alias {
-			parts = append(parts, aliasStyle.Render(value.Alias))
+		if aliases := displayAliases(value); aliases != label {
+			parts = append(parts, aliasStyle.Render(aliases))
 		}
 		if address != "" {
 			parts = append(parts, addressStyle.Render(address))
@@ -214,6 +214,10 @@ func hostMetadata(value host.Host) string {
 		metadata = append([]string{value.Group}, metadata...)
 	}
 	return strings.Join(metadata, " · ")
+}
+
+func displayAliases(value host.Host) string {
+	return strings.Join(append([]string{value.Alias}, value.Aliases...), ", ")
 }
 
 func formatPreview(preview host.Preview) string {

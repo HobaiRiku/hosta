@@ -7,7 +7,7 @@ import (
 
 func TestSearchUsesAllFields(t *testing.T) {
 	index := mustIndex(t, []Host{
-		{Alias: "mt2500", DisplayName: "MT2500 路由器", Group: "personal", Tags: []string{"home", "router"}},
+		{Alias: "mt2500", Aliases: []string{"mt"}, DisplayName: "MT2500 路由器", Group: "personal", Tags: []string{"home", "router"}},
 		{Alias: "prod-api", Description: "Primary production service", Preview: Preview{HostName: "api.example.com"}},
 	})
 
@@ -18,6 +18,7 @@ func TestSearchUsesAllFields(t *testing.T) {
 	}{
 		{query: "路由", alias: "mt2500", field: MatchDisplayName},
 		{query: "router", alias: "mt2500", field: MatchTag},
+		{query: "mt", alias: "mt2500", field: MatchAlias},
 		{query: "example", alias: "prod-api", field: MatchHostName},
 		{query: "production", alias: "prod-api", field: MatchDescription},
 	}
@@ -28,6 +29,14 @@ func TestSearchUsesAllFields(t *testing.T) {
 				t.Fatalf("Search(%q) = %#v", tt.query, results)
 			}
 		})
+	}
+}
+
+func TestSearchFindsAlternateAliasOnce(t *testing.T) {
+	index := mustIndex(t, []Host{{Alias: "production", Aliases: []string{"prod", "prod-api"}}})
+	results := index.Search("prod-api", 0)
+	if len(results) != 1 || results[0].Host.Alias != "production" || results[0].Field != MatchAlias {
+		t.Fatalf("Search() = %#v", results)
 	}
 }
 

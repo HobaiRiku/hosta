@@ -52,10 +52,12 @@ func completeHosts(deps dependencies, options *rootOptions) cobra.CompletionFunc
 		for _, value := range hosts {
 			description := strings.ReplaceAll(value.DisplayName, "\t", " ")
 			description = strings.ReplaceAll(description, "\n", " ")
-			if description == "" {
-				values = append(values, value.Alias)
-			} else {
-				values = append(values, value.Alias+"\t"+description)
+			for _, alias := range append([]string{value.Alias}, value.Aliases...) {
+				if description == "" {
+					values = append(values, alias)
+				} else {
+					values = append(values, alias+"\t"+description)
+				}
 			}
 		}
 		return values, cobra.ShellCompDirectiveNoFileComp

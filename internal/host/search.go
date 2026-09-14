@@ -77,6 +77,9 @@ func bestMatch(query string, candidate Host) (Result, bool) {
 		{field: MatchAlias, value: candidate.Alias, weight: fieldWeights[MatchAlias]},
 		{field: MatchDisplayName, value: candidate.DisplayName, weight: fieldWeights[MatchDisplayName]},
 	}
+	for _, alias := range candidate.Aliases {
+		fields = append(fields, fieldValue{field: MatchAlias, value: alias, weight: fieldWeights[MatchAlias]})
+	}
 	for _, tag := range candidate.Tags {
 		fields = append(fields, fieldValue{field: MatchTag, value: tag, weight: fieldWeights[MatchTag]})
 	}

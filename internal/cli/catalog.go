@@ -53,7 +53,7 @@ func newShowCommand(deps dependencies, options *rootOptions) *cobra.Command {
 			if err != nil {
 				return withCode(4, err)
 			}
-			resolved, err := client.Resolve(cmd.Context(), value.Alias, options.configPath, configWasExplicit(cmd))
+			resolved, err := client.Resolve(cmd.Context(), args[0], options.configPath, configWasExplicit(cmd))
 			if err != nil {
 				return withCode(5, err)
 			}
@@ -77,6 +77,7 @@ func loadSnapshot(deps dependencies, path string) (*app.Snapshot, error) {
 
 type jsonHost struct {
 	Alias       string   `json:"alias"`
+	Aliases     []string `json:"aliases,omitempty"`
 	DisplayName string   `json:"displayName,omitempty"`
 	Group       string   `json:"group,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
@@ -92,6 +93,7 @@ func writeHostJSON(w io.Writer, hosts []host.Host) error {
 	for i, value := range hosts {
 		values[i] = jsonHost{
 			Alias:       value.Alias,
+			Aliases:     append([]string(nil), value.Aliases...),
 			DisplayName: value.DisplayName,
 			Group:       value.Group,
 			Tags:        append([]string(nil), value.Tags...),
@@ -114,7 +116,7 @@ func writeHostTable(w io.Writer, hosts []host.Host) error {
 		return err
 	}
 	for _, value := range hosts {
-		if _, err := fmt.Fprintf(table, "%s\t%s\t%s\t%s\n", value.Alias, value.DisplayName, value.Group, value.Preview.HostName); err != nil {
+		if _, err := fmt.Fprintf(table, "%s\t%s\t%s\t%s\n", displayAliases(value), value.DisplayName, value.Group, value.Preview.HostName); err != nil {
 			return err
 		}
 	}
@@ -127,7 +129,7 @@ func writeHostDetails(w io.Writer, value host.Host, resolved openssh.Resolved) e
 		name = value.Alias
 	}
 	table := tabwriter.NewWriter(w, 0, 4, 2, ' ', 0)
-	if _, err := fmt.Fprintf(table, "%s\n\nAlias\t%s\nGroup\t%s\nTags\t%s\nDescription\t%s\n\nSSH (resolved by OpenSSH)\nHostName\t%s\nUser\t%s\nPort\t%s\n", name, value.Alias, value.Group, strings.Join(value.Tags, " "), value.Description, resolved.HostName, resolved.User, resolved.Port); err != nil {
+	if _, err := fmt.Fprintf(table, "%s\n\nAlias\t%s\nAliases\t%s\nGroup\t%s\nTags\t%s\nDescription\t%s\n\nSSH (resolved by OpenSSH)\nHostName\t%s\nUser\t%s\nPort\t%s\n", name, value.Alias, strings.Join(value.Aliases, " "), value.Group, strings.Join(value.Tags, " "), value.Description, resolved.HostName, resolved.User, resolved.Port); err != nil {
 		return err
 	}
 	for _, identity := range resolved.IdentityFiles {
@@ -149,4 +151,9 @@ func writeHostDetails(w io.Writer, value host.Host, resolved openssh.Resolved) e
 		}
 	}
 	return nil
+}
+
+func displayAliases(value host.Host) string {
+	aliases := append([]string{value.Alias}, value.Aliases...)
+	return strings.Join(aliases, ", ")
 }

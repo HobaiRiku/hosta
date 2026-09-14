@@ -17,7 +17,7 @@ func newConnectCommand(deps dependencies, options *rootOptions) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			value, ok := snapshot.Index.Get(args[0])
+			_, ok := snapshot.Index.Get(args[0])
 			if !ok {
 				return withCode(2, fmt.Errorf("SSH host %q was not discovered", args[0]))
 			}
@@ -25,7 +25,7 @@ func newConnectCommand(deps dependencies, options *rootOptions) *cobra.Command {
 			if err != nil {
 				return withCode(4, err)
 			}
-			return client.Connect(cmd.Context(), value.Alias, options.configPath, configWasExplicit(cmd))
+			return client.Connect(cmd.Context(), args[0], options.configPath, configWasExplicit(cmd))
 		},
 	}
 	command.ValidArgsFunction = completeHosts(deps, options)

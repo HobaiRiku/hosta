@@ -73,7 +73,7 @@ func TestShowResolvesEffectiveConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if ssh.resolveAlias != "home" || !ssh.explicitConfig {
+	if ssh.resolveAlias != "HOME" || !ssh.explicitConfig {
 		t.Fatalf("resolve call alias = %q, explicit = %v", ssh.resolveAlias, ssh.explicitConfig)
 	}
 	if !strings.Contains(stdout, "effective.example.com") || !strings.Contains(stdout, "/tmp/config:3") {
@@ -81,13 +81,13 @@ func TestShowResolvesEffectiveConfig(t *testing.T) {
 	}
 }
 
-func TestConnectUsesDiscoveredCanonicalAlias(t *testing.T) {
+func TestConnectPreservesRequestedAlias(t *testing.T) {
 	ssh := &fakeSSHClient{}
 	deps := testDependencies(t, ssh)
 	if _, err := executeForTest(deps, "connect", "HOME"); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if ssh.connectAlias != "home" || ssh.explicitConfig {
+	if ssh.connectAlias != "HOME" || ssh.explicitConfig {
 		t.Fatalf("connect call alias = %q, explicit = %v", ssh.connectAlias, ssh.explicitConfig)
 	}
 }
@@ -150,6 +150,45 @@ func TestHostCompletionUsesCatalogOnly(t *testing.T) {
 	}
 	if ssh.resolveAlias != "" || ssh.connectAlias != "" {
 		t.Fatalf("completion invoked OpenSSH: %#v", ssh)
+	}
+}
+
+func TestHostCompletionIncludesAlternateAliases(t *testing.T) {
+	ssh := &fakeSSHClient{}
+	index, err := host.NewIndex([]host.Host{{Alias: "home", Aliases: []string{"home-alt"}, DisplayName: "Home Server"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deps := dependencies{
+		load: func(string) (*app.Snapshot, error) {
+			return &app.Snapshot{Index: index, Config: &sshconfig.Config{Entry: "/tmp/config"}}, nil
+		},
+		newSSH: func() (sshClient, error) { return ssh, nil },
+	}
+	command := newConnectCommand(deps, &rootOptions{configPath: "/tmp/config"})
+	values, directive := command.ValidArgsFunction(command, nil, "home")
+	if directive != cobra.ShellCompDirectiveNoFileComp || !reflect.DeepEqual(values, []string{"home\tHome Server", "home-alt\tHome Server"}) {
+		t.Fatalf("completion = %#v, %v", values, directive)
+	}
+}
+
+func TestConnectUsesRequestedAlternateAlias(t *testing.T) {
+	ssh := &fakeSSHClient{}
+	index, err := host.NewIndex([]host.Host{{Alias: "home", Aliases: []string{"home-alt"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deps := dependencies{
+		load: func(string) (*app.Snapshot, error) {
+			return &app.Snapshot{Index: index, Config: &sshconfig.Config{Entry: "/tmp/config"}}, nil
+		},
+		newSSH: func() (sshClient, error) { return ssh, nil },
+	}
+	if _, err := executeForTest(deps, "connect", "home-alt"); err != nil {
+		t.Fatal(err)
+	}
+	if ssh.connectAlias != "home-alt" {
+		t.Fatalf("connect alias = %q", ssh.connectAlias)
 	}
 }
 

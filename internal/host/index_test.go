@@ -42,7 +42,7 @@ func TestIndexOwnsCopies(t *testing.T) {
 }
 
 func TestIndexGetIsCaseInsensitive(t *testing.T) {
-	index, err := NewIndex([]Host{{Alias: "Home", Tags: []string{"personal"}}})
+	index, err := NewIndex([]Host{{Alias: "Home", Aliases: []string{"home-alt"}, Tags: []string{"personal"}}})
 	if err != nil {
 		t.Fatalf("NewIndex() error = %v", err)
 	}
@@ -53,6 +53,16 @@ func TestIndexGetIsCaseInsensitive(t *testing.T) {
 	got.Tags[0] = "changed"
 	if stored, _ := index.Get("home"); stored.Tags[0] != "personal" {
 		t.Fatalf("Get() exposed internal slice: %#v", stored)
+	}
+	if got, ok := index.Get("HOME-ALT"); !ok || got.Alias != "Home" {
+		t.Fatalf("Get() alternate alias = %#v, %v", got, ok)
+	}
+}
+
+func TestNewIndexRejectsDuplicateAlternateAlias(t *testing.T) {
+	_, err := NewIndex([]Host{{Alias: "home", Aliases: []string{"shared"}}, {Alias: "work", Aliases: []string{"shared"}}})
+	if err == nil {
+		t.Fatal("NewIndex() error = nil, want duplicate alternate alias")
 	}
 }
 

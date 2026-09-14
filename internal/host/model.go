@@ -21,6 +21,7 @@ type Preview struct {
 type Host struct {
 	ID          string
 	Alias       string
+	Aliases     []string
 	DisplayName string
 	Group       string
 	Tags        []string
@@ -31,6 +32,7 @@ type Host struct {
 }
 
 func clone(value Host) Host {
+	value.Aliases = append([]string(nil), value.Aliases...)
 	value.Tags = append([]string(nil), value.Tags...)
 	value.Sources = append([]Source(nil), value.Sources...)
 	return value

@@ -55,11 +55,11 @@ Host nas
 	for i := range hosts {
 		aliases[i] = hosts[i].Alias
 	}
-	if want := []string{"alpha", "dev", "home", "nas", "prod"}; !reflect.DeepEqual(aliases, want) {
+	if want := []string{"alpha", "dev", "home", "nas"}; !reflect.DeepEqual(aliases, want) {
 		t.Fatalf("aliases = %#v, want %#v", aliases, want)
 	}
 	dev := hosts[1]
-	if dev.DisplayName != "Work" || dev.Group != "work" || !reflect.DeepEqual(dev.Tags, []string{"linux"}) {
+	if dev.DisplayName != "Work" || dev.Group != "work" || !reflect.DeepEqual(dev.Aliases, []string{"prod"}) || !reflect.DeepEqual(dev.Tags, []string{"linux"}) {
 		t.Fatalf("dev metadata = %#v", dev)
 	}
 	home := hosts[2]

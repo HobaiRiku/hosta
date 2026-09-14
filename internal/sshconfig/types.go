@@ -61,6 +61,7 @@ type Config struct {
 
 type Host struct {
 	Alias       string
+	Aliases     []string
 	DisplayName string
 	Group       string
 	Tags        []string
