@@ -15,6 +15,16 @@ Discover -> Search -> Select -> Connect
 需要 Go 1.25 或更高版本：
 
 ```bash
+git clone git@github.com:HobaiRiku/hosta.git
+cd hosta
+make build
+
+./hosta
+```
+
+也可以直接从源码运行：
+
+```bash
 go run ./cmd/hosta
 go run ./cmd/hosta list
 go run ./cmd/hosta show home
@@ -32,6 +42,8 @@ hosta completion powershell
 ```
 
 `hosta connect <TAB>` 与 `hosta show <TAB>` 会从本地 SSH Config 动态补全 Host，不执行网络请求或 `ssh -G`。
+
+首个 Git Tag 发布后，可从 GitHub Releases 下载 macOS、Linux 和 Windows 的 amd64/arm64 归档及 `checksums.txt`。
 
 读取其他用户配置入口：
 

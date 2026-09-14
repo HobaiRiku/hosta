@@ -1,6 +1,6 @@
 # Hosta 设计文档
 
-状态：Draft for implementation  
+状态：V0.1 implementation baseline
 基线日期：2026-09-14
 
 本目录是 Hosta 开发的当前设计基线。架构为未来演进预留边界，但未列入当前里程碑的能力不能提前进入开发。
