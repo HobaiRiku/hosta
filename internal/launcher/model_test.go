@@ -49,6 +49,33 @@ func TestNavigationAndSelection(t *testing.T) {
 	}
 }
 
+func TestCopySelectedSSHCommand(t *testing.T) {
+	var copied string
+	m := newModelWithClipboard(testIndex(t), func(command string) error {
+		copied = command
+		return nil
+	})
+	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
+	if command == nil {
+		t.Fatal("copy command is nil")
+	}
+	message := command()
+	next, _ = next.(model).Update(message)
+	result := next.(model)
+	if copied != "ssh home" || result.notice != "Copied: ssh home" {
+		t.Fatalf("copied = %q, notice = %q", copied, result.notice)
+	}
+}
+
+func TestCopyFailureShowsNotice(t *testing.T) {
+	m := newModelWithClipboard(testIndex(t), func(string) error { return errors.New("clipboard service missing") })
+	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
+	next, _ = next.(model).Update(command())
+	if got := next.(model).notice; !strings.Contains(got, "Clipboard unavailable") {
+		t.Fatalf("notice = %q", got)
+	}
+}
+
 func TestEscapeClearsThenQuits(t *testing.T) {
 	m := newModel(testIndex(t))
 	m.input.SetValue("prod")

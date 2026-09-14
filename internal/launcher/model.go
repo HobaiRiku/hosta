@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/HobaiRiku/hosta/internal/host"
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/term"
 )
@@ -24,6 +25,7 @@ var (
 	aliasStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#67E8F9"))
 	addressStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#6EE7B7"))
 	metadataStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#94A3B8"))
+	noticeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FCD34D"))
 	selectedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Background(lipgloss.Color("#C2410C")).
@@ -39,14 +41,20 @@ type model struct {
 	height   int
 	details  bool
 	selected string
+	notice   string
+	copy     func(string) error
 }
 
 func newModel(index *host.Index) model {
+	return newModelWithClipboard(index, clipboard.WriteAll)
+}
+
+func newModelWithClipboard(index *host.Index, copyToClipboard func(string) error) model {
 	input := textinput.New()
 	input.Prompt = accentStyle.Render("Search") + "  "
 	input.Placeholder = "type to filter hosts"
 	input.Focus()
-	m := model{input: input, index: index, width: 80, height: 24}
+	m := model{input: input, index: index, width: 80, height: 24, copy: copyToClipboard}
 	m.refresh()
 	return m
 }
@@ -57,6 +65,13 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case clipboardResultMsg:
+		if msg.err != nil {
+			m.notice = "Clipboard unavailable: " + msg.err.Error()
+		} else {
+			m.notice = "Copied: " + msg.command
+		}
+		return m, nil
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -92,6 +107,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab":
 			m.details = !m.details
 			return m, nil
+		case "y":
+			if len(m.results) == 0 || m.copy == nil {
+				return m, nil
+			}
+			command := "ssh " + m.results[m.cursor].Host.Alias
+			m.notice = "Copying: " + command
+			return m, copyCommand(m.copy, command)
 		}
 	}
 
@@ -123,10 +145,24 @@ func (m model) View() tea.View {
 		}
 	}
 
-	content.WriteString("\n" + metadataStyle.Render("↑↓ select  •  Enter connect  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"))
+	if m.notice != "" {
+		content.WriteString("\n" + noticeStyle.Render(m.notice))
+	}
+	content.WriteString("\n" + metadataStyle.Render("↑↓ select  •  Enter connect  •  Y copy SSH command  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"))
 	view := tea.NewView(content.String())
 	view.AltScreen = true
 	return view
+}
+
+type clipboardResultMsg struct {
+	command string
+	err     error
+}
+
+func copyCommand(copyToClipboard func(string) error, command string) tea.Cmd {
+	return func() tea.Msg {
+		return clipboardResultMsg{command: command, err: copyToClipboard(command)}
+	}
 }
 
 func (m *model) refresh() {
@@ -138,6 +174,9 @@ func (m model) visibleRange() (int, int) {
 	reserved := 7
 	if m.details {
 		reserved += 3
+	}
+	if m.notice != "" {
+		reserved++
 	}
 	limit := max(1, m.height-reserved)
 	start := 0
