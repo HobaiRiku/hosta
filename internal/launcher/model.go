@@ -116,7 +116,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab":
 			m.details = !m.details
 			return m, nil
-		case "y":
+		case "ctrl+y":
 			if len(m.results) == 0 || m.copy == nil || m.command == nil {
 				return m, nil
 			}
@@ -156,7 +156,7 @@ func (m model) View() tea.View {
 	if m.notice != "" {
 		content.WriteString("\n" + noticeStyle.Render(m.notice))
 	}
-	content.WriteString("\n" + metadataStyle.Render("↑↓ select  •  Enter connect  •  Y copy SSH command  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"))
+	content.WriteString("\n" + metadataStyle.Render("↑↓ select  •  Enter connect  •  Ctrl+Y copy SSH command  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"))
 	view := tea.NewView(content.String())
 	view.AltScreen = true
 	return view

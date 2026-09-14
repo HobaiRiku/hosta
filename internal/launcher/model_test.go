@@ -54,7 +54,7 @@ func TestCopySelectedResolvedSSHCommand(t *testing.T) {
 	m := newModelWithCommand(testIndex(t), func(command string) error { copied = command; return nil }, func(string) (string, error) {
 		return "ssh -p 2222 root@192.0.2.10", nil
 	})
-	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
+	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Mod: tea.ModCtrl})
 	if command == nil {
 		t.Fatal("copy command is nil")
 	}
@@ -68,10 +68,23 @@ func TestCopySelectedResolvedSSHCommand(t *testing.T) {
 
 func TestCopyFailureShowsNotice(t *testing.T) {
 	m := newModelWithCommand(testIndex(t), func(string) error { return errors.New("clipboard service missing") }, func(alias string) (string, error) { return "ssh " + alias, nil })
-	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
+	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Mod: tea.ModCtrl})
 	next, _ = next.(model).Update(command())
 	if got := next.(model).notice; !strings.Contains(got, "Clipboard unavailable") {
 		t.Fatalf("notice = %q", got)
+	}
+}
+
+func TestPlainYRemainsSearchInput(t *testing.T) {
+	var resolved bool
+	m := newModelWithCommand(testIndex(t), func(string) error { return nil }, func(string) (string, error) {
+		resolved = true
+		return "ssh", nil
+	})
+	next, _ := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
+	result := next.(model)
+	if resolved || result.input.Value() != "y" {
+		t.Fatalf("resolved = %v, search input = %q", resolved, result.input.Value())
 	}
 }
 

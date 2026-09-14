@@ -90,7 +90,7 @@ hosta completion zsh
 
 This writes `~/.hosta_completion_zsh` and adds an idempotent source block to `~/.zshrc`. Use `--stdout` to print the script instead.
 
-In the interactive launcher, press `y` to copy the selected host's resolved `ssh -p <port> <user>@<host>` command.
+In the interactive launcher, press `Ctrl+Y` to copy the selected host's resolved `ssh -p <port> <user>@<host>` command.
 
 ## Development
 
