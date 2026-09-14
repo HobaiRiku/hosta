@@ -87,6 +87,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.input.SetWidth(max(10, msg.Width-10))
 		return m, nil
 	case tea.KeyPressMsg:
+		m.notice = ""
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit

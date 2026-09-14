@@ -75,6 +75,15 @@ func TestCopyFailureShowsNotice(t *testing.T) {
 	}
 }
 
+func TestNextKeyPressClearsClipboardNotice(t *testing.T) {
+	m := newModel(testIndex(t))
+	m.notice = "Copied: ssh -p 2222 root@192.0.2.10"
+	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	if got := next.(model).notice; got != "" {
+		t.Fatalf("notice = %q, want empty", got)
+	}
+}
+
 func TestPlainYRemainsSearchInput(t *testing.T) {
 	var resolved bool
 	m := newModelWithCommand(testIndex(t), func(string) error { return nil }, func(string) (string, error) {
