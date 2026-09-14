@@ -88,6 +88,7 @@ func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command 
 		newDoctorCommand(deps, options),
 		newConnectCommand(deps, options),
 		newConfigCommand(options),
+		newCompletionCommand(),
 	)
 	return root
 }

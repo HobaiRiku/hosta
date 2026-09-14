@@ -7,7 +7,7 @@ import (
 )
 
 func newConnectCommand(deps dependencies, options *rootOptions) *cobra.Command {
-	return &cobra.Command{
+	command := &cobra.Command{
 		Use:     "connect <host>",
 		Aliases: []string{"c"},
 		Short:   "Connect to a discovered SSH host",
@@ -28,4 +28,6 @@ func newConnectCommand(deps dependencies, options *rootOptions) *cobra.Command {
 			return client.Connect(cmd.Context(), value.Alias, options.configPath, configWasExplicit(cmd))
 		},
 	}
+	command.ValidArgsFunction = completeHosts(deps, options)
+	return command
 }

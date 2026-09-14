@@ -8,7 +8,7 @@ Hosta 从现有 OpenSSH 配置发现主机，快速搜索并交由系统 `ssh` �
 Discover -> Search -> Select -> Connect
 ```
 
-项目当前处于 V0.1 开发阶段。命令模式与交互式 Launcher 已经可以读取 SSH Config、检索主机、展示 OpenSSH 最终配置并启动连接；Shell Completion 与正式发布流程仍在开发中。
+项目当前处于 V0.1 开发阶段，尚未发布稳定版本。命令模式、交互式 Launcher、Shell Completion 和跨平台构建链路已经完成。
 
 ## 开发预览
 
@@ -21,6 +21,17 @@ go run ./cmd/hosta show home
 go run ./cmd/hosta doctor
 go run ./cmd/hosta connect home
 ```
+
+生成 Shell Completion：
+
+```bash
+hosta completion bash
+hosta completion zsh
+hosta completion fish
+hosta completion powershell
+```
+
+`hosta connect <TAB>` 与 `hosta show <TAB>` 会从本地 SSH Config 动态补全 Host，不执行网络请求或 `ssh -G`。
 
 读取其他用户配置入口：
 

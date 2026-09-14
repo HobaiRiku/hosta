@@ -36,7 +36,7 @@ func newListCommand(deps dependencies, options *rootOptions) *cobra.Command {
 }
 
 func newShowCommand(deps dependencies, options *rootOptions) *cobra.Command {
-	return &cobra.Command{
+	command := &cobra.Command{
 		Use:   "show <host>",
 		Short: "Show Hosta metadata and effective OpenSSH configuration",
 		Args:  exactArgs(1),
@@ -60,6 +60,8 @@ func newShowCommand(deps dependencies, options *rootOptions) *cobra.Command {
 			return writeHostDetails(cmd.OutOrStdout(), value, resolved)
 		},
 	}
+	command.ValidArgsFunction = completeHosts(deps, options)
+	return command
 }
 
 func loadSnapshot(deps dependencies, path string) (*app.Snapshot, error) {

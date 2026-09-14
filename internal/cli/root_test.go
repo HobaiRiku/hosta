@@ -13,6 +13,7 @@ import (
 	"github.com/HobaiRiku/hosta/internal/launcher"
 	"github.com/HobaiRiku/hosta/internal/openssh"
 	"github.com/HobaiRiku/hosta/internal/sshconfig"
+	"github.com/spf13/cobra"
 )
 
 func TestVersionCommand(t *testing.T) {
@@ -124,6 +125,33 @@ func TestConfigCommand(t *testing.T) {
 	}
 	if stdout != "/tmp/custom\n" {
 		t.Fatalf("config output = %q", stdout)
+	}
+}
+
+func TestCompletionScripts(t *testing.T) {
+	for _, shell := range []string{"bash", "zsh", "fish", "powershell"} {
+		t.Run(shell, func(t *testing.T) {
+			stdout, err := executeForTest(testDependencies(t, &fakeSSHClient{}), "completion", shell)
+			if err != nil {
+				t.Fatalf("Execute() error = %v", err)
+			}
+			if !strings.Contains(strings.ToLower(stdout), "hosta") {
+				t.Fatalf("completion output does not identify hosta: %q", stdout)
+			}
+		})
+	}
+}
+
+func TestHostCompletionUsesCatalogOnly(t *testing.T) {
+	ssh := &fakeSSHClient{}
+	deps := testDependencies(t, ssh)
+	command := newConnectCommand(deps, &rootOptions{configPath: "/tmp/config"})
+	values, directive := command.ValidArgsFunction(command, nil, "ho")
+	if directive != cobra.ShellCompDirectiveNoFileComp || !reflect.DeepEqual(values, []string{"home\tHome Server"}) {
+		t.Fatalf("completion = %#v, %v", values, directive)
+	}
+	if ssh.resolveAlias != "" || ssh.connectAlias != "" {
+		t.Fatalf("completion invoked OpenSSH: %#v", ssh)
 	}
 }
 
