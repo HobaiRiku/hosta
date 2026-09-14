@@ -9,8 +9,9 @@
 | 里程碑 | 状态 | 说明 |
 | --- | --- | --- |
 | M0 Bootstrap | 已完成 | Go module、技术栈、命令/TUI 骨架、测试、三平台 CI |
-| M1 SSH Config Parser | 下一步 | 尚未开始 |
-| M2-M5 | 未开始 | 按下述顺序推进 |
+| M1 SSH Config Parser | 已完成 | AST、Include Graph、诊断与 Host discovery |
+| M2 Host Index/Search | 下一步 | 已有 fuzzy 技术验证，待统一索引 |
+| M3-M5 | 未开始 | 按下述顺序推进 |
 
 ## V0.1
 

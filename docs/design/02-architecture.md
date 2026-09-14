@@ -61,6 +61,8 @@ docs/design/
 
 它不完整求值 OpenSSH 继承/匹配语义，也不做“后值覆盖前值”的错误 map merge。最终结果交给 `ssh -G`。
 
+按照 OpenSSH 语义，用户配置中的相对 Include 以 `~/.ssh` 为基准，glob 按字典序展开。`${ENV}`、`~`、`%d`、`%u`、`%i`、`%l`、`%L` 和 `%%` 可静态展开；依赖目标 Host 的 token 无法用于全量发现，parser 必须产生诊断而非猜测。
+
 ```go
 type Node struct {
     Source     SourceLocation
