@@ -14,6 +14,49 @@ It discovers hosts from your existing SSH config, provides fuzzy search and shel
 
 ## Install
 
+### macOS (Homebrew)
+
+```bash
+brew install HobaiRiku/tap/hosta
+```
+
+### Prebuilt binaries
+
+For Linux, macOS, and Windows, download the archive matching your OS and CPU
+architecture from the [latest release](https://github.com/HobaiRiku/hosta/releases/latest), extract it, and put the `hosta` binary on your `PATH`.
+
+For example, on Linux:
+
+```bash
+tar -xzf hosta_*_linux_*.tar.gz
+sudo install -m 755 hosta /usr/local/bin/hosta
+```
+
+On Windows, run the following in PowerShell. It downloads the latest x64 release,
+installs `hosta.exe` in your user-local programs directory, and adds that directory
+to your user `PATH`:
+
+```powershell
+$release = Invoke-RestMethod https://api.github.com/repos/HobaiRiku/hosta/releases/latest
+$asset = $release.assets | Where-Object { $_.name -match '_windows_amd64\.zip$' } | Select-Object -First 1
+if (-not $asset) { throw 'No Windows x64 archive found in the latest release.' }
+
+$installDir = Join-Path $env:LOCALAPPDATA 'Programs\hosta'
+$archive = Join-Path $env:TEMP $asset.name
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $archive
+New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+Expand-Archive -Path $archive -DestinationPath $installDir -Force
+
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if ($userPath -notlike "*$installDir*") {
+  [Environment]::SetEnvironmentVariable('Path', "$userPath;$installDir", 'User')
+}
+```
+
+Open a new PowerShell window, then run `hosta version` to verify the installation.
+
+### Install from source
+
 Go 1.25 or later is required:
 
 ```bash
