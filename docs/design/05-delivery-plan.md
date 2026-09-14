@@ -12,8 +12,8 @@
 | M1 SSH Config Parser | 已完成 | AST、Include Graph、诊断与 Host discovery |
 | M2 Host Index/Search | 已完成 | 统一模型、字段权重、确定性排序与基准测试 |
 | M3 CLI/OpenSSH | 已完成 | list/show/doctor/connect/config、resolve 与平台进程边界 |
-| M4 Interactive Launcher | 下一步 | 已有 TUI 骨架，待接入 Host Index |
-| M5 | 未开始 | Completion 与发布收口 |
+| M4 Interactive Launcher | 已完成 | 实时检索、导航、详情、TTY/小终端降级与选择后连接 |
+| M5 Completion/Release | 下一步 | 尚未开始 |
 
 ## V0.1
 

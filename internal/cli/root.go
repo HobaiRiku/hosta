@@ -60,7 +60,22 @@ func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command 
 		SilenceUsage:  true,
 		Args:          exactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return launcher.Run(cmd.InOrStdin(), cmd.OutOrStdout())
+			snapshot, err := loadSnapshot(deps, options.configPath)
+			if err != nil {
+				return err
+			}
+			alias, err := launcher.Run(cmd.InOrStdin(), cmd.OutOrStdout(), snapshot.Index)
+			if err != nil {
+				return err
+			}
+			if alias == "" {
+				return nil
+			}
+			client, err := deps.newSSH()
+			if err != nil {
+				return withCode(4, err)
+			}
+			return client.Connect(cmd.Context(), alias, options.configPath, configWasExplicit(cmd))
 		},
 	}
 	root.PersistentFlags().StringVar(&options.configPath, "config", defaultConfigPath, "path to the user SSH config")

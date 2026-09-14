@@ -10,6 +10,7 @@ import (
 
 	"github.com/HobaiRiku/hosta/internal/app"
 	"github.com/HobaiRiku/hosta/internal/host"
+	"github.com/HobaiRiku/hosta/internal/launcher"
 	"github.com/HobaiRiku/hosta/internal/openssh"
 	"github.com/HobaiRiku/hosta/internal/sshconfig"
 )
@@ -129,6 +130,13 @@ func TestConfigCommand(t *testing.T) {
 func TestExitCode(t *testing.T) {
 	if got := ExitCode(withCode(4, errors.New("missing"))); got != 4 {
 		t.Fatalf("ExitCode() = %d, want 4", got)
+	}
+}
+
+func TestRootRejectsNonTTY(t *testing.T) {
+	_, err := executeForTest(testDependencies(t, &fakeSSHClient{}))
+	if !errors.Is(err, launcher.ErrNoTTY) {
+		t.Fatalf("root error = %v, want ErrNoTTY", err)
 	}
 }
 

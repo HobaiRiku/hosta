@@ -8,13 +8,14 @@ Hosta 从现有 OpenSSH 配置发现主机，快速搜索并交由系统 `ssh` �
 Discover -> Search -> Select -> Connect
 ```
 
-项目当前处于 V0.1 开发阶段。命令模式已经可以读取 SSH Config、列出主机、展示 OpenSSH 最终配置并启动连接；交互式 Launcher 仍在开发中。
+项目当前处于 V0.1 开发阶段。命令模式与交互式 Launcher 已经可以读取 SSH Config、检索主机、展示 OpenSSH 最终配置并启动连接；Shell Completion 与正式发布流程仍在开发中。
 
 ## 开发预览
 
 需要 Go 1.25 或更高版本：
 
 ```bash
+go run ./cmd/hosta
 go run ./cmd/hosta list
 go run ./cmd/hosta show home
 go run ./cmd/hosta doctor
