@@ -15,6 +15,16 @@ func Load(configPath string, options sshconfig.Options) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
+	changed, err := sshconfig.EnsureLegacyCompatibility(config)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		config, err = sshconfig.Parse(configPath, options)
+		if err != nil {
+			return nil, err
+		}
+	}
 	index, err := IndexFromSSHConfig(config)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,7 @@
 
 ## 数据边界
 
-- **Native SSH Config**：用户已有配置和 Include 链；V0.1 只读。
+- **Native SSH Config**：用户已有配置和 Include 链；除旧版裸元数据兼容保护外，V0.1 只读。
 - **Portable Hosta Data**：V0.2 起由 Hosta 管理，可同步 Host 资料、Group、Tags、Description、逻辑 Identity 和版本。
 - **Machine Data**：SSH binary、真实私钥路径、终端偏好、设备 ID、缓存、Recent/Frequency、Workspace 本地路径，只保存在本机。
 
@@ -30,6 +30,8 @@ Host home
 ```
 
 OpenSSH 完全忽略这些行，Hosta 按当前 Host block 读取。普通注释不具备语义，`@hosta.*` 之外的名称在 V0.1 也不会进入 Host Index。
+
+为兼容旧版配置，Hosta 仍读取 Host block 内的 `DisplayName`、`Group`、`Tags`、`Description` 裸指令。只有检测到这些旧字段且前置规则尚未覆盖时，Hosta 才会在入口 SSH Config 顶部原子地补入 `IgnoreUnknown DisplayName,Group,Tags,Description`；新格式注释不会触发写入。
 
 ## Import / Export
 
