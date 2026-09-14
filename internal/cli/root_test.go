@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -129,7 +131,7 @@ func TestConfigCommand(t *testing.T) {
 func TestCompletionScripts(t *testing.T) {
 	for _, shell := range []string{"bash", "zsh", "fish", "powershell"} {
 		t.Run(shell, func(t *testing.T) {
-			stdout, err := executeForTest(testDependencies(t, &fakeSSHClient{}), "completion", shell)
+			stdout, err := executeForTest(testDependencies(t, &fakeSSHClient{}), "completion", shell, "--stdout")
 			if err != nil {
 				t.Fatalf("Execute() error = %v", err)
 			}
@@ -137,6 +139,43 @@ func TestCompletionScripts(t *testing.T) {
 				t.Fatalf("completion output does not identify hosta: %q", stdout)
 			}
 		})
+	}
+}
+
+func TestInstallCompletionCreatesAndUpdatesStartupFile(t *testing.T) {
+	home := t.TempDir()
+	startupFile := filepath.Join(home, ".zshrc")
+	if err := os.WriteFile(startupFile, []byte("export EDITOR=vim\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	root := newRootCommand(testDependencies(t, &fakeSSHClient{}), filepath.Join(home, ".ssh", "config"))
+	completionFile, updatedStartup, err := installCompletion(root, "zsh", home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if completionFile != filepath.Join(home, ".hosta_completion_zsh") || updatedStartup != startupFile {
+		t.Fatalf("install target = %q, %q", completionFile, updatedStartup)
+	}
+	script, err := os.ReadFile(completionFile)
+	if err != nil || !strings.Contains(string(script), "hosta") {
+		t.Fatalf("completion script = %q, %v", script, err)
+	}
+	startup, err := os.ReadFile(startupFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(startup), "export EDITOR=vim") || !strings.Contains(string(startup), "source \"$HOME/.hosta_completion_zsh\"") {
+		t.Fatalf("startup file = %q", startup)
+	}
+	if _, _, err := installCompletion(root, "zsh", home); err != nil {
+		t.Fatal(err)
+	}
+	startup, err = os.ReadFile(startupFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count := strings.Count(string(startup), completionBlockStart); count != 1 {
+		t.Fatalf("completion blocks = %d, startup = %q", count, startup)
 	}
 }
 

@@ -39,11 +39,13 @@ Use another SSH config with `--config`:
 hosta --config /path/to/ssh_config list
 ```
 
-Generate shell completion with:
+Install or update shell completion with:
 
 ```bash
 hosta completion zsh
 ```
+
+This writes `~/.hosta_completion_zsh` and adds an idempotent source block to `~/.zshrc`. Use `--stdout` to print the script instead.
 
 ## Development
 
