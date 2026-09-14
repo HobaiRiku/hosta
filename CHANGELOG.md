@@ -8,7 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- Homebrew Tap publishing and an interactive shortcut to copy `ssh <alias>`.
+- Homebrew Tap publishing and an interactive shortcut to copy a resolved SSH command.
 - OpenSSH Config discovery with recursive Include graph and source diagnostics.
 - Weighted Unicode Host search and interactive terminal launcher.
 - `connect`, `list`, `show`, `config`, `doctor`, `completion`, and `version` commands.

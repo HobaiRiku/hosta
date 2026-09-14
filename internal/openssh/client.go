@@ -29,6 +29,41 @@ type Resolved struct {
 	IdentityFiles []string
 }
 
+// ConnectionCommand returns a portable shell command using the effective
+// destination values returned by ssh -G. It intentionally omits IdentityFile
+// because local key paths are not safe to copy into a shareable command.
+func (r Resolved) ConnectionCommand() (string, error) {
+	if r.HostName == "" {
+		return "", fmt.Errorf("resolved SSH host has no hostname")
+	}
+	target := r.HostName
+	if r.User != "" {
+		target = r.User + "@" + target
+	}
+	args := []string{"ssh"}
+	if r.Port != "" {
+		args = append(args, "-p", shellQuote(r.Port))
+	}
+	args = append(args, shellQuote(target))
+	return strings.Join(args, " "), nil
+}
+
+func shellQuote(value string) string {
+	if value != "" {
+		safe := true
+		for _, char := range value {
+			if !(unicode.IsLetter(char) || unicode.IsDigit(char) || strings.ContainsRune("@%+=:,./_-", char)) {
+				safe = false
+				break
+			}
+		}
+		if safe {
+			return value
+		}
+	}
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
+}
+
 func New(binary string, runner Runner) (*Client, error) {
 	if binary == "" {
 		var err error

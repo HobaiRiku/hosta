@@ -49,11 +49,10 @@ func TestNavigationAndSelection(t *testing.T) {
 	}
 }
 
-func TestCopySelectedSSHCommand(t *testing.T) {
+func TestCopySelectedResolvedSSHCommand(t *testing.T) {
 	var copied string
-	m := newModelWithClipboard(testIndex(t), func(command string) error {
-		copied = command
-		return nil
+	m := newModelWithCommand(testIndex(t), func(command string) error { copied = command; return nil }, func(string) (string, error) {
+		return "ssh -p 2222 root@192.0.2.10", nil
 	})
 	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	if command == nil {
@@ -62,13 +61,13 @@ func TestCopySelectedSSHCommand(t *testing.T) {
 	message := command()
 	next, _ = next.(model).Update(message)
 	result := next.(model)
-	if copied != "ssh home" || result.notice != "Copied: ssh home" {
+	if copied != "ssh -p 2222 root@192.0.2.10" || result.notice != "Copied: ssh -p 2222 root@192.0.2.10" {
 		t.Fatalf("copied = %q, notice = %q", copied, result.notice)
 	}
 }
 
 func TestCopyFailureShowsNotice(t *testing.T) {
-	m := newModelWithClipboard(testIndex(t), func(string) error { return errors.New("clipboard service missing") })
+	m := newModelWithCommand(testIndex(t), func(string) error { return errors.New("clipboard service missing") }, func(alias string) (string, error) { return "ssh " + alias, nil })
 	next, command := m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
 	next, _ = next.(model).Update(command())
 	if got := next.(model).notice; !strings.Contains(got, "Clipboard unavailable") {
@@ -139,7 +138,7 @@ func TestEmptyIndexMessage(t *testing.T) {
 }
 
 func TestRunRejectsNonTTY(t *testing.T) {
-	_, err := Run(&bytes.Buffer{}, &bytes.Buffer{}, testIndex(t))
+	_, err := Run(&bytes.Buffer{}, &bytes.Buffer{}, testIndex(t), nil)
 	if !errors.Is(err, ErrNoTTY) {
 		t.Fatalf("Run() error = %v, want ErrNoTTY", err)
 	}

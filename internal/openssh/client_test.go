@@ -73,3 +73,23 @@ func TestResolveIncludesStderrOnFailure(t *testing.T) {
 		t.Fatal("Resolve() error = nil")
 	}
 }
+
+func TestResolvedConnectionCommand(t *testing.T) {
+	command, err := (Resolved{HostName: "192.0.2.10", User: "root", Port: "2222"}).ConnectionCommand()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "ssh -p 2222 root@192.0.2.10"; command != want {
+		t.Fatalf("command = %q, want %q", command, want)
+	}
+}
+
+func TestResolvedConnectionCommandQuotesUnsafeValues(t *testing.T) {
+	command, err := (Resolved{HostName: "host name", User: "root", Port: "22"}).ConnectionCommand()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "ssh -p 22 'root@host name'"; command != want {
+		t.Fatalf("command = %q, want %q", command, want)
+	}
+}

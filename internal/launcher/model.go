@@ -43,18 +43,27 @@ type model struct {
 	selected string
 	notice   string
 	copy     func(string) error
+	command  func(string) (string, error)
 }
 
 func newModel(index *host.Index) model {
-	return newModelWithClipboard(index, clipboard.WriteAll)
+	return newModelWithCommand(index, clipboard.WriteAll, func(alias string) (string, error) {
+		return "ssh " + alias, nil
+	})
 }
 
 func newModelWithClipboard(index *host.Index, copyToClipboard func(string) error) model {
+	return newModelWithCommand(index, copyToClipboard, func(alias string) (string, error) {
+		return "ssh " + alias, nil
+	})
+}
+
+func newModelWithCommand(index *host.Index, copyToClipboard func(string) error, commandForAlias func(string) (string, error)) model {
 	input := textinput.New()
 	input.Prompt = accentStyle.Render("Search") + "  "
 	input.Placeholder = "type to filter hosts"
 	input.Focus()
-	m := model{input: input, index: index, width: 80, height: 24, copy: copyToClipboard}
+	m := model{input: input, index: index, width: 80, height: 24, copy: copyToClipboard, command: commandForAlias}
 	m.refresh()
 	return m
 }
@@ -108,12 +117,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.details = !m.details
 			return m, nil
 		case "y":
-			if len(m.results) == 0 || m.copy == nil {
+			if len(m.results) == 0 || m.copy == nil || m.command == nil {
 				return m, nil
 			}
-			command := "ssh " + m.results[m.cursor].Host.Alias
-			m.notice = "Copying: " + command
-			return m, copyCommand(m.copy, command)
+			m.notice = "Preparing SSH command..."
+			return m, copyCommand(m.copy, m.command, m.results[m.cursor].Host.Alias)
 		}
 	}
 
@@ -159,8 +167,12 @@ type clipboardResultMsg struct {
 	err     error
 }
 
-func copyCommand(copyToClipboard func(string) error, command string) tea.Cmd {
+func copyCommand(copyToClipboard func(string) error, commandForAlias func(string) (string, error), alias string) tea.Cmd {
 	return func() tea.Msg {
+		command, err := commandForAlias(alias)
+		if err != nil {
+			return clipboardResultMsg{err: err}
+		}
 		return clipboardResultMsg{command: command, err: copyToClipboard(command)}
 	}
 }
@@ -273,7 +285,7 @@ func formatPreview(preview host.Preview) string {
 	return address
 }
 
-func Run(input io.Reader, output io.Writer, index *host.Index) (string, error) {
+func Run(input io.Reader, output io.Writer, index *host.Index, commandForAlias func(string) (string, error)) (string, error) {
 	if index == nil {
 		return "", fmt.Errorf("host index is nil")
 	}
@@ -282,7 +294,7 @@ func Run(input io.Reader, output io.Writer, index *host.Index) (string, error) {
 	if !inputOK || !outputOK || !term.IsTerminal(inputFile.Fd()) || !term.IsTerminal(outputFile.Fd()) {
 		return "", ErrNoTTY
 	}
-	final, err := tea.NewProgram(newModel(index), tea.WithInput(input), tea.WithOutput(output)).Run()
+	final, err := tea.NewProgram(newModelWithCommand(index, clipboard.WriteAll, commandForAlias), tea.WithInput(input), tea.WithOutput(output)).Run()
 	if err != nil {
 		return "", err
 	}

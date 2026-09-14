@@ -66,7 +66,18 @@ func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command 
 			if err != nil {
 				return err
 			}
-			alias, err := launcher.Run(cmd.InOrStdin(), cmd.OutOrStdout(), snapshot.Index)
+			commandForAlias := func(alias string) (string, error) {
+				client, err := deps.newSSH()
+				if err != nil {
+					return "", err
+				}
+				resolved, err := client.Resolve(cmd.Context(), alias, options.configPath, configWasExplicit(cmd))
+				if err != nil {
+					return "", err
+				}
+				return resolved.ConnectionCommand()
+			}
+			alias, err := launcher.Run(cmd.InOrStdin(), cmd.OutOrStdout(), snapshot.Index, commandForAlias)
 			if err != nil {
 				return err
 			}
