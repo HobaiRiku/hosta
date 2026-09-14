@@ -20,6 +20,8 @@ func TestParseLine(t *testing.T) {
 		{name: "quoted", line: `Description "Home server #1" # note`, directive: "description", args: []string{"Home server #1"}, ok: true},
 		{name: "value equals", line: "SetEnv FOO=bar", directive: "setenv", args: []string{"FOO=bar"}, ok: true},
 		{name: "escaped space", line: `Include cloud\ folder/*.conf`, directive: "include", args: []string{"cloud folder/*.conf"}, ok: true},
+		{name: "hosta annotation", line: `  # @hosta.display-name Home Server`, directive: "hosta.display-name", args: []string{"Home", "Server"}, ok: true},
+		{name: "ordinary comment", line: `# deployment hosts`, ok: false},
 	}
 
 	for _, tt := range tests {

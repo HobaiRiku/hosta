@@ -55,7 +55,7 @@ hosta version
 
 `show` 分开显示 Hosta 元数据、OpenSSH 最终配置与来源；最终配置标明由 OpenSSH resolve。敏感或冗长字段默认不全量打印。
 
-`doctor` 只诊断本机环境和静态配置：OpenSSH、入口、Include、循环/缺失、重复 alias、元数据/IgnoreUnknown、可明确判断的 IdentityFile。它不探测远端网络。
+`doctor` 只诊断本机环境和静态配置：OpenSSH、入口、Include、循环/缺失、重复 alias、结构化元数据、可明确判断的 IdentityFile。它不探测远端网络。
 
 ## Completion
 

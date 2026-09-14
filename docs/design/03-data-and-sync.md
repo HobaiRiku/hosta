@@ -15,9 +15,21 @@ SSH Config 是互操作层，不等同于 Hosta Store 或同步文件。
 
 ## 元数据约定
 
-候选 directive 为 `DisplayName`、`Group`、`Tag`、`Description`。OpenSSH 遇到未知 directive 会报错，因此只有入口正确声明 `IgnoreUnknown` 才安全。
+Hosta 不占用自定义 OpenSSH directive。OpenSSH 会持续增加关键字，例如 `Tag` 已有原生语义；即使使用 `IgnoreUnknown`，自定义参数形态也可能与 OpenSSH parser 冲突。
 
-V0.1 可以读取，但不自动写入 directive 或 `IgnoreUnknown`；`doctor` 检查兼容性。若原型证明跨平台兼容不足，改用紧邻 Host block 的结构化注释，再冻结格式。
+V0.1 将元数据冻结为 Host block 内的结构化注释：
+
+```sshconfig
+Host home
+    # @hosta.display-name Home Server
+    # @hosta.group personal
+    # @hosta.tags home server
+    # @hosta.description Primary home host
+    HostName home.example.com
+    User root
+```
+
+OpenSSH 完全忽略这些行，Hosta 按当前 Host block 读取。普通注释不具备语义，`@hosta.*` 之外的名称在 V0.1 也不会进入 Host Index。
 
 ## Import / Export
 

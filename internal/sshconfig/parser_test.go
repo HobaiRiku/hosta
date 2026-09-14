@@ -10,29 +10,28 @@ import (
 func TestParseIncludesAndDiscoverHosts(t *testing.T) {
 	sshDir := t.TempDir()
 	mustWrite(t, filepath.Join(sshDir, "config"), `
-IgnoreUnknown DisplayName,Group,Tag,Description
 Include conf.d/*.conf
 
 Host *.example.com !blocked.example.com
     User deploy
 
 Host home
+    # @hosta.display-name Home Server
+    # @hosta.group personal
+    # @hosta.tags home server
     HostName home.example.com
-    DisplayName "Home Server"
-    Group personal
-    Tag home server
 `)
 	mustWrite(t, filepath.Join(sshDir, "conf.d", "20-work.conf"), `
 Host dev prod
-    DisplayName Work
-    Group work
-    Tag linux
+    # @hosta.display-name Work
+    # @hosta.group work
+    # @hosta.tags linux
 Include shared.conf
 `)
 	mustWrite(t, filepath.Join(sshDir, "conf.d", "10-first.conf"), "Host alpha\n")
 	mustWrite(t, filepath.Join(sshDir, "shared.conf"), `
 Host nas
-    Description "Storage #1"
+    # @hosta.description "Storage #1"
 `)
 
 	config, err := Parse(filepath.Join(sshDir, "config"), Options{
@@ -64,7 +63,7 @@ Host nas
 		t.Fatalf("dev metadata = %#v", dev)
 	}
 	home := hosts[2]
-	if home.Sources[0].Line != 8 || home.DisplayName != "Home Server" || home.HostName != "home.example.com" {
+	if home.Sources[0].Line != 7 || home.DisplayName != "Home Server" || home.HostName != "home.example.com" {
 		t.Fatalf("home = %#v", home)
 	}
 	if hosts[3].Description != "Storage #1" {

@@ -48,19 +48,19 @@ func (c *Config) Hosts() []Host {
 
 func applyMetadata(host *Host, node Node) {
 	switch node.Directive {
-	case "displayname":
+	case "hosta.display-name":
 		if host.DisplayName == "" {
 			host.DisplayName = strings.Join(node.Args, " ")
 		}
-	case "group":
+	case "hosta.group":
 		if host.Group == "" {
 			host.Group = strings.Join(node.Args, " ")
 		}
-	case "tag":
+	case "hosta.tags":
 		for _, tag := range node.Args {
 			host.Tags = appendUniqueFold(host.Tags, tag)
 		}
-	case "description":
+	case "hosta.description":
 		if host.Description == "" {
 			host.Description = strings.Join(node.Args, " ")
 		}

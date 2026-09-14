@@ -8,8 +8,11 @@ import (
 
 func parseLine(line string) (string, []string, bool, error) {
 	line = strings.TrimSpace(line)
-	if line == "" || strings.HasPrefix(line, "#") {
+	if line == "" {
 		return "", nil, false, nil
+	}
+	if strings.HasPrefix(line, "#") {
+		return parseAnnotation(line)
 	}
 
 	end := 0
@@ -31,6 +34,14 @@ func parseLine(line string) (string, []string, bool, error) {
 		return "", nil, false, err
 	}
 	return directive, args, true, nil
+}
+
+func parseAnnotation(line string) (string, []string, bool, error) {
+	comment := strings.TrimSpace(strings.TrimPrefix(line, "#"))
+	if len(comment) < len("@hosta.") || !strings.EqualFold(comment[:len("@hosta.")], "@hosta.") {
+		return "", nil, false, nil
+	}
+	return parseLine("hosta." + comment[len("@hosta."):])
 }
 
 func splitArguments(input string) ([]string, error) {
