@@ -64,7 +64,7 @@ Host nas
 		t.Fatalf("dev metadata = %#v", dev)
 	}
 	home := hosts[2]
-	if home.Sources[0].Line != 8 || home.DisplayName != "Home Server" {
+	if home.Sources[0].Line != 8 || home.DisplayName != "Home Server" || home.HostName != "home.example.com" {
 		t.Fatalf("home = %#v", home)
 	}
 	if hosts[3].Description != "Storage #1" {

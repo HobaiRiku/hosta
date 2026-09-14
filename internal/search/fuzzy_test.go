@@ -16,3 +16,13 @@ func TestFindEmptyKeepsInputOrder(t *testing.T) {
 		t.Fatalf("Find() = %#v, want original order", matches)
 	}
 }
+
+func TestMatchOneReturnsPositions(t *testing.T) {
+	match, ok := MatchOne("hs", "Home Server")
+	if !ok {
+		t.Fatal("MatchOne() did not match")
+	}
+	if len(match.Positions) != 2 {
+		t.Fatalf("positions = %#v, want two positions", match.Positions)
+	}
+}

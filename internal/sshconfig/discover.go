@@ -64,6 +64,18 @@ func applyMetadata(host *Host, node Node) {
 		if host.Description == "" {
 			host.Description = strings.Join(node.Args, " ")
 		}
+	case "hostname":
+		if host.HostName == "" {
+			host.HostName = strings.Join(node.Args, " ")
+		}
+	case "user":
+		if host.User == "" {
+			host.User = strings.Join(node.Args, " ")
+		}
+	case "port":
+		if host.Port == "" {
+			host.Port = strings.Join(node.Args, " ")
+		}
 	}
 }
 

@@ -8,6 +8,18 @@ type Match struct {
 	Positions []int
 }
 
+func MatchOne(query, candidate string) (Match, bool) {
+	matches := fuzzy.Find(query, []string{candidate})
+	if len(matches) == 0 {
+		return Match{}, false
+	}
+	return Match{
+		Index:     0,
+		Score:     matches[0].Score,
+		Positions: append([]int(nil), matches[0].MatchedIndexes...),
+	}, true
+}
+
 func Find(query string, candidates []string) []Match {
 	if query == "" {
 		matches := make([]Match, len(candidates))

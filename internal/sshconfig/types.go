@@ -65,5 +65,8 @@ type Host struct {
 	Group       string
 	Tags        []string
 	Description string
+	HostName    string
+	User        string
+	Port        string
 	Sources     []SourceLocation
 }
