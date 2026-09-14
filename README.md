@@ -8,7 +8,36 @@ Hosta 从现有 OpenSSH 配置发现主机，快速搜索并交由系统 `ssh` �
 Discover -> Search -> Select -> Connect
 ```
 
-项目当前处于设计与初始化阶段，尚未提供可用版本。
+项目当前处于 V0.1 开发阶段。命令模式已经可以读取 SSH Config、列出主机、展示 OpenSSH 最终配置并启动连接；交互式 Launcher 仍在开发中。
+
+## 开发预览
+
+需要 Go 1.25 或更高版本：
+
+```bash
+go run ./cmd/hosta list
+go run ./cmd/hosta show home
+go run ./cmd/hosta doctor
+go run ./cmd/hosta connect home
+```
+
+读取其他用户配置入口：
+
+```bash
+go run ./cmd/hosta --config /path/to/ssh_config list
+```
+
+Hosta 元数据使用不会影响 OpenSSH 的结构化注释：
+
+```sshconfig
+Host home
+    # @hosta.display-name Home Server
+    # @hosta.group personal
+    # @hosta.tags home server
+    # @hosta.description Primary home host
+    HostName home.example.com
+    User root
+```
 
 ## 设计文档
 

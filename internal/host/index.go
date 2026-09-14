@@ -41,6 +41,15 @@ func (i *Index) All() []Host {
 	return result
 }
 
+func (i *Index) Get(alias string) (Host, bool) {
+	for _, candidate := range i.hosts {
+		if strings.EqualFold(candidate.Alias, alias) {
+			return clone(candidate), true
+		}
+	}
+	return Host{}, false
+}
+
 func sortHosts(hosts []Host) {
 	sort.SliceStable(hosts, func(i, j int) bool {
 		leftGroup := strings.ToLower(hosts[i].Group)

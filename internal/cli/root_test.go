@@ -2,8 +2,16 @@ package cli
 
 import (
 	"bytes"
+	"context"
+	"errors"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/HobaiRiku/hosta/internal/app"
+	"github.com/HobaiRiku/hosta/internal/host"
+	"github.com/HobaiRiku/hosta/internal/openssh"
+	"github.com/HobaiRiku/hosta/internal/sshconfig"
 )
 
 func TestVersionCommand(t *testing.T) {
@@ -20,6 +28,150 @@ func TestVersionCommand(t *testing.T) {
 		if !strings.Contains(stdout.String(), want) {
 			t.Fatalf("version output %q does not contain %q", stdout.String(), want)
 		}
+	}
+}
+
+type fakeSSHClient struct {
+	resolved       openssh.Resolved
+	resolveAlias   string
+	connectAlias   string
+	explicitConfig bool
+}
+
+func (f *fakeSSHClient) Binary() string { return "/usr/bin/ssh" }
+func (f *fakeSSHClient) Version(context.Context) (string, error) {
+	return "OpenSSH_test", nil
+}
+func (f *fakeSSHClient) Resolve(_ context.Context, alias, _ string, explicit bool) (openssh.Resolved, error) {
+	f.resolveAlias = alias
+	f.explicitConfig = explicit
+	return f.resolved, nil
+}
+func (f *fakeSSHClient) Connect(_ context.Context, alias, _ string, explicit bool) error {
+	f.connectAlias = alias
+	f.explicitConfig = explicit
+	return nil
+}
+
+func TestListJSON(t *testing.T) {
+	ssh := &fakeSSHClient{}
+	deps := testDependencies(t, ssh)
+	stdout, err := executeForTest(deps, "list", "--json")
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	want := "[\n  {\n    \"alias\": \"home\",\n    \"displayName\": \"Home Server\",\n    \"group\": \"personal\",\n    \"tags\": [\n      \"home\"\n    ],\n    \"hostName\": \"preview.example.com\",\n    \"user\": \"root\",\n    \"port\": \"22\",\n    \"origin\": \"native\"\n  }\n]\n"
+	if stdout != want {
+		t.Fatalf("list output = %q, want %q", stdout, want)
+	}
+}
+
+func TestShowResolvesEffectiveConfig(t *testing.T) {
+	ssh := &fakeSSHClient{resolved: openssh.Resolved{HostName: "effective.example.com", User: "root", Port: "2222"}}
+	deps := testDependencies(t, ssh)
+	stdout, err := executeForTest(deps, "--config", "/tmp/custom", "show", "HOME")
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if ssh.resolveAlias != "home" || !ssh.explicitConfig {
+		t.Fatalf("resolve call alias = %q, explicit = %v", ssh.resolveAlias, ssh.explicitConfig)
+	}
+	if !strings.Contains(stdout, "effective.example.com") || !strings.Contains(stdout, "/tmp/config:3") {
+		t.Fatalf("show output = %q", stdout)
+	}
+}
+
+func TestConnectUsesDiscoveredCanonicalAlias(t *testing.T) {
+	ssh := &fakeSSHClient{}
+	deps := testDependencies(t, ssh)
+	if _, err := executeForTest(deps, "connect", "HOME"); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if ssh.connectAlias != "home" || ssh.explicitConfig {
+		t.Fatalf("connect call alias = %q, explicit = %v", ssh.connectAlias, ssh.explicitConfig)
+	}
+}
+
+func TestDoctorPrintsDiagnosticsAndReturnsConfigCode(t *testing.T) {
+	ssh := &fakeSSHClient{}
+	deps := testDependencies(t, ssh)
+	deps.load = func(string) (*app.Snapshot, error) {
+		index, _ := host.NewIndex(nil)
+		return &app.Snapshot{
+			Index: index,
+			Config: &sshconfig.Config{Entry: "/tmp/config", Diagnostics: []sshconfig.Diagnostic{{
+				Severity: sshconfig.SeverityError,
+				Code:     "include-cycle",
+				Message:  "cycle",
+				Source:   sshconfig.SourceLocation{File: "/tmp/config", Line: 2},
+			}}},
+		}, nil
+	}
+	stdout, err := executeForTest(deps, "doctor")
+	if err == nil || ExitCode(err) != 3 {
+		t.Fatalf("doctor error = %v, code = %d", err, ExitCode(err))
+	}
+	if !strings.Contains(stdout, "include-cycle") || !strings.Contains(stdout, "/tmp/config:2") {
+		t.Fatalf("doctor output = %q", stdout)
+	}
+}
+
+func TestConfigCommand(t *testing.T) {
+	stdout, err := executeForTest(testDependencies(t, &fakeSSHClient{}), "--config", "/tmp/custom", "config")
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if stdout != "/tmp/custom\n" {
+		t.Fatalf("config output = %q", stdout)
+	}
+}
+
+func TestExitCode(t *testing.T) {
+	if got := ExitCode(withCode(4, errors.New("missing"))); got != 4 {
+		t.Fatalf("ExitCode() = %d, want 4", got)
+	}
+}
+
+func testDependencies(t *testing.T, ssh *fakeSSHClient) dependencies {
+	t.Helper()
+	index, err := host.NewIndex([]host.Host{{
+		Alias:       "home",
+		DisplayName: "Home Server",
+		Group:       "personal",
+		Tags:        []string{"home"},
+		Preview:     host.Preview{HostName: "preview.example.com", User: "root", Port: "22"},
+		Sources:     []host.Source{{File: "/tmp/config", Line: 3}},
+		Origin:      host.OriginNative,
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dependencies{
+		load: func(string) (*app.Snapshot, error) {
+			return &app.Snapshot{Index: index, Config: &sshconfig.Config{Entry: "/tmp/config"}}, nil
+		},
+		newSSH: func() (sshClient, error) { return ssh, nil },
+	}
+}
+
+func executeForTest(deps dependencies, args ...string) (string, error) {
+	var stdout bytes.Buffer
+	command := newRootCommand(deps, "/tmp/config")
+	command.SetOut(&stdout)
+	command.SetErr(&bytes.Buffer{})
+	command.SetArgs(args)
+	err := command.Execute()
+	return stdout.String(), err
+}
+
+func TestListTableOrder(t *testing.T) {
+	stdout, err := executeForTest(testDependencies(t, &fakeSSHClient{}), "list")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(stdout), "\n")
+	if len(lines) != 2 || !reflect.DeepEqual(strings.Fields(lines[0]), []string{"ALIAS", "NAME", "GROUP", "HOST"}) {
+		t.Fatalf("table output = %q", stdout)
 	}
 }
 
