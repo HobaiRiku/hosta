@@ -13,7 +13,11 @@ import (
 
 func TestInitialView(t *testing.T) {
 	m := newModel(testIndex(t))
-	view := m.View().Content
+	result := m.View()
+	if !result.AltScreen {
+		t.Fatal("launcher must use the alternate screen buffer")
+	}
+	view := result.Content
 	for _, want := range []string{"Hosta", "Search", "2 hosts", "Home Server", "root@home.example.com:22"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("view %q does not contain %q", view, want)

@@ -109,7 +109,9 @@ func (m model) View() tea.View {
 	}
 
 	content.WriteString("\n↑↓ select   Enter connect   Esc clear/quit   Tab details   Ctrl+C quit")
-	return tea.NewView(content.String())
+	view := tea.NewView(content.String())
+	view.AltScreen = true
+	return view
 }
 
 func (m *model) refresh() {
