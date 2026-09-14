@@ -54,3 +54,20 @@ changelog:
 
 release:
   prerelease: auto
+
+brews:
+  - name: hosta
+    ids:
+      - default
+    repository:
+      owner: HobaiRiku
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/HobaiRiku/hosta
+    description: Fast interactive SSH host launcher built on top of OpenSSH
+    license: MIT
+    directory: Formula
+    install: |
+      bin.install "hosta"
+    test: |
+      system "#{bin}/hosta", "version"
