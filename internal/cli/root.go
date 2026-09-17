@@ -22,6 +22,10 @@ type sshClient interface {
 	Connect(context.Context, string, string, bool) error
 }
 
+type interactiveSSHClient interface {
+	ConnectInteractive(context.Context, string, string, bool) error
+}
+
 type dependencies struct {
 	load   func(string) (*app.Snapshot, error)
 	newSSH func() (sshClient, error)
@@ -87,6 +91,12 @@ func newRootCommand(deps dependencies, defaultConfigPath string) *cobra.Command 
 			client, err := deps.newSSH()
 			if err != nil {
 				return withCode(4, err)
+			}
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Connecting to %s ...\n", alias); err != nil {
+				return err
+			}
+			if interactive, ok := client.(interactiveSSHClient); ok {
+				return interactive.ConnectInteractive(cmd.Context(), alias, options.configPath, configWasExplicit(cmd))
 			}
 			return client.Connect(cmd.Context(), alias, options.configPath, configWasExplicit(cmd))
 		},

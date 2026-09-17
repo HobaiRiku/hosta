@@ -15,3 +15,9 @@ func RunInteractive(ctx context.Context, binary string, args []string) error {
 	command.Stderr = os.Stderr
 	return command.Run()
 }
+
+// ClearAfterConnectCommand is executed by OpenSSH's LocalCommand only after
+// authentication and session establishment succeed.
+func ClearAfterConnectCommand() string {
+	return "cls"
+}

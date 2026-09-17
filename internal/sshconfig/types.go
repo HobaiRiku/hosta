@@ -64,7 +64,6 @@ type Host struct {
 	Aliases     []string
 	DisplayName string
 	Group       string
-	Tags        []string
 	Description string
 	HostName    string
 	User        string

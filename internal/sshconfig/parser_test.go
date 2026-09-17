@@ -18,14 +18,12 @@ Host *.example.com !blocked.example.com
 Host home
     # @hosta.display-name Home Server
     # @hosta.group personal
-    # @hosta.tags home server
     HostName home.example.com
 `)
 	mustWrite(t, filepath.Join(sshDir, "conf.d", "20-work.conf"), `
 Host dev prod
     # @hosta.display-name Work
     # @hosta.group work
-    # @hosta.tags linux
 Include shared.conf
 `)
 	mustWrite(t, filepath.Join(sshDir, "conf.d", "10-first.conf"), "Host alpha\n")
@@ -59,7 +57,7 @@ Host nas
 		t.Fatalf("aliases = %#v, want %#v", aliases, want)
 	}
 	dev := hosts[1]
-	if dev.DisplayName != "Work" || dev.Group != "work" || !reflect.DeepEqual(dev.Aliases, []string{"prod"}) || !reflect.DeepEqual(dev.Tags, []string{"linux"}) {
+	if dev.DisplayName != "Work" || dev.Group != "work" || !reflect.DeepEqual(dev.Aliases, []string{"prod"}) {
 		t.Fatalf("dev metadata = %#v", dev)
 	}
 	home := hosts[2]

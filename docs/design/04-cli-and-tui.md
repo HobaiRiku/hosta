@@ -39,6 +39,7 @@ hosta version
 | Up / Ctrl+P | 上一个结果 |
 | Down / Ctrl+N | 下一个结果 |
 | Enter | 连接当前 Host 并离开 Hosta |
+| Ctrl+] | 进入 Group 名称输入过滤；输入时实时筛选，Enter 保留筛选并返回 Host 选择 |
 | Esc | 有查询时清空；无查询时退出 |
 | Ctrl+C | 退出 |
 | Tab | 展开/收起详情 |
@@ -47,7 +48,7 @@ hosta version
 
 ## 搜索与排序
 
-查询 Alias、DisplayName、Tags、Group、HostName Preview、Description。空查询按 Group、Alias 稳定排序；非空先按 score，再稳定打破平局。支持 ASCII 大小写不敏感、中文/Unicode、连续与词首命中、Alias 精确前缀加权。V0.1 不加入 Recent/Favorite 权重。
+查询 Alias、DisplayName、Group、HostName Preview、Description。空查询按 Group、Alias 稳定排序；非空先按 score，再稳定打破平局。支持 ASCII 大小写不敏感、中文/Unicode、连续与词首命中、Alias 精确前缀加权。V0.1 不加入 Recent/Favorite 权重。
 
 ## 核心输出
 
@@ -66,4 +67,4 @@ hosta version
 
 ## 连接语义
 
-Enter 或 `hosta c home` 是 Launch and Leave Hosta。Hosta 不输出会干扰 SSH stdio 的装饰信息。`--` 后参数透传及 alias/参数选项注入规则必须以安全测试冻结。
+Enter 或 `hosta c home` 是 Launch and Leave Hosta。Launcher 选择后会先显示 `Connecting to <alias> ...`；OpenSSH 成功建立会话后，通过受控的本地命令清屏，使远端会话从干净终端开始。`--` 后参数透传及 alias/参数选项注入规则必须以安全测试冻结。

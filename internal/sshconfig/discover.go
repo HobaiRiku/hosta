@@ -73,10 +73,6 @@ func applyMetadata(host *Host, node Node) {
 		if host.Group == "" {
 			host.Group = strings.Join(node.Args, " ")
 		}
-	case "hosta.tags", "tags":
-		for _, tag := range node.Args {
-			host.Tags = appendUniqueFold(host.Tags, tag)
-		}
 	case "hosta.description", "description":
 		if host.Description == "" {
 			host.Description = strings.Join(node.Args, " ")

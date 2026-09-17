@@ -7,7 +7,7 @@ import (
 
 func TestSearchUsesAllFields(t *testing.T) {
 	index := mustIndex(t, []Host{
-		{Alias: "mt2500", Aliases: []string{"mt"}, DisplayName: "MT2500 路由器", Group: "personal", Tags: []string{"home", "router"}},
+		{Alias: "mt2500", Aliases: []string{"mt"}, DisplayName: "MT2500 路由器", Group: "personal", Description: "Home router"},
 		{Alias: "prod-api", Description: "Primary production service", Preview: Preview{HostName: "api.example.com"}},
 	})
 
@@ -17,7 +17,7 @@ func TestSearchUsesAllFields(t *testing.T) {
 		field MatchField
 	}{
 		{query: "路由", alias: "mt2500", field: MatchDisplayName},
-		{query: "router", alias: "mt2500", field: MatchTag},
+		{query: "router", alias: "mt2500", field: MatchDescription},
 		{query: "mt", alias: "mt2500", field: MatchAlias},
 		{query: "example", alias: "prod-api", field: MatchHostName},
 		{query: "production", alias: "prod-api", field: MatchDescription},
@@ -75,7 +75,6 @@ func BenchmarkSearch(b *testing.B) {
 			Alias:       "production-host-" + string(rune('a'+i%26)) + string(rune('a'+i/26%26)),
 			DisplayName: "Production Service",
 			Group:       "work",
-			Tags:        []string{"linux", "production"},
 			Description: "Application server",
 		}
 	}

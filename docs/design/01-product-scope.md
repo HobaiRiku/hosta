@@ -15,7 +15,7 @@ Hosta 是建立在现有 OpenSSH 配置之上的快速、交互式、跨平台 S
 - 零配置读取已有 SSH Host。
 - 在终端中以极短路径完成搜索和连接。
 - 显示 Host 的来源与 OpenSSH 最终生效配置。
-- 逐步提供 DisplayName、Group、Tags、Description 等资料。
+- 逐步提供 DisplayName、Group、Description 等资料。
 - 未来借助已有云盘目录同步可移植资料，不建设 Hosta 云端账号体系。
 
 ## 产品原则
@@ -43,7 +43,7 @@ V0.1 对 SSH Config 只读，不创建 Hosta Store，不做同步。
 - Hosta Store 与稳定 Host ID。
 - 显式 import、preview、apply/export。
 - Portable Data 与 Machine Data 分层。
-- Group、Tags、DisplayName、Description、Recent、Favorite。
+- Group、DisplayName、Description、Recent、Favorite。
 
 ### V0.3：目录同步
 

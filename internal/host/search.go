@@ -12,7 +12,6 @@ type MatchField string
 const (
 	MatchAlias       MatchField = "alias"
 	MatchDisplayName MatchField = "display-name"
-	MatchTag         MatchField = "tag"
 	MatchGroup       MatchField = "group"
 	MatchHostName    MatchField = "host-name"
 	MatchDescription MatchField = "description"
@@ -35,7 +34,6 @@ type fieldValue struct {
 var fieldWeights = map[MatchField]int{
 	MatchAlias:       100,
 	MatchDisplayName: 90,
-	MatchTag:         70,
 	MatchGroup:       60,
 	MatchHostName:    50,
 	MatchDescription: 30,
@@ -79,9 +77,6 @@ func bestMatch(query string, candidate Host) (Result, bool) {
 	}
 	for _, alias := range candidate.Aliases {
 		fields = append(fields, fieldValue{field: MatchAlias, value: alias, weight: fieldWeights[MatchAlias]})
-	}
-	for _, tag := range candidate.Tags {
-		fields = append(fields, fieldValue{field: MatchTag, value: tag, weight: fieldWeights[MatchTag]})
 	}
 	fields = append(fields,
 		fieldValue{field: MatchGroup, value: candidate.Group, weight: fieldWeights[MatchGroup]},

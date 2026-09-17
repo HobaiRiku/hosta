@@ -62,7 +62,7 @@ func TestListJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	want := "[\n  {\n    \"alias\": \"home\",\n    \"displayName\": \"Home Server\",\n    \"group\": \"personal\",\n    \"tags\": [\n      \"home\"\n    ],\n    \"hostName\": \"preview.example.com\",\n    \"user\": \"root\",\n    \"port\": \"22\",\n    \"origin\": \"native\"\n  }\n]\n"
+	want := "[\n  {\n    \"alias\": \"home\",\n    \"displayName\": \"Home Server\",\n    \"group\": \"personal\",\n    \"hostName\": \"preview.example.com\",\n    \"user\": \"root\",\n    \"port\": \"22\",\n    \"origin\": \"native\"\n  }\n]\n"
 	if stdout != want {
 		t.Fatalf("list output = %q, want %q", stdout, want)
 	}
@@ -78,7 +78,7 @@ func TestShowResolvesEffectiveConfig(t *testing.T) {
 	if ssh.resolveAlias != "HOME" || !ssh.explicitConfig {
 		t.Fatalf("resolve call alias = %q, explicit = %v", ssh.resolveAlias, ssh.explicitConfig)
 	}
-	if !strings.Contains(stdout, "effective.example.com") || !strings.Contains(stdout, "/tmp/config:3") {
+	if !strings.Contains(stdout, "effective.example.com") || !strings.Contains(stdout, "/tmp/config:3") || strings.Contains(stdout, "Tags") {
 		t.Fatalf("show output = %q", stdout)
 	}
 }
@@ -250,7 +250,6 @@ func testDependencies(t *testing.T, ssh *fakeSSHClient) dependencies {
 		Alias:       "home",
 		DisplayName: "Home Server",
 		Group:       "personal",
-		Tags:        []string{"home"},
 		Preview:     host.Preview{HostName: "preview.example.com", User: "root", Port: "22"},
 		Sources:     []host.Source{{File: "/tmp/config", Line: 3}},
 		Origin:      host.OriginNative,

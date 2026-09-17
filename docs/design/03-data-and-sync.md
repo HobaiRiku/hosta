@@ -3,7 +3,7 @@
 ## 数据边界
 
 - **Native SSH Config**：用户已有配置和 Include 链；除旧版裸元数据兼容保护外，V0.1 只读。
-- **Portable Hosta Data**：V0.2 起由 Hosta 管理，可同步 Host 资料、Group、Tags、Description、逻辑 Identity 和版本。
+- **Portable Hosta Data**：V0.2 起由 Hosta 管理，可同步 Host 资料、Group、Description、逻辑 Identity 和版本。
 - **Machine Data**：SSH binary、真实私钥路径、终端偏好、设备 ID、缓存、Recent/Frequency、Workspace 本地路径，只保存在本机。
 
 ```text
@@ -23,7 +23,6 @@ V0.1 将元数据冻结为 Host block 内的结构化注释：
 Host home
     # @hosta.display-name Home Server
     # @hosta.group personal
-    # @hosta.tags home server
     # @hosta.description Primary home host
     HostName home.example.com
     User root
@@ -31,7 +30,7 @@ Host home
 
 OpenSSH 完全忽略这些行，Hosta 按当前 Host block 读取。普通注释不具备语义，`@hosta.*` 之外的名称在 V0.1 也不会进入 Host Index。
 
-为兼容旧版配置，Hosta 仍读取 Host block 内的 `DisplayName`、`Group`、`Tags`、`Description` 裸指令。只有检测到这些旧字段且前置规则尚未覆盖时，Hosta 才会在入口 SSH Config 顶部原子地补入 `IgnoreUnknown DisplayName,Group,Tags,Description`；新格式注释不会触发写入。
+为兼容旧版配置，Hosta 仍读取 Host block 内的 `DisplayName`、`Group`、`Description` 裸指令。`Tags` 已移除，不再读取或输出；若旧配置仍包含该裸指令，Hosta 仍会将它加入 `IgnoreUnknown DisplayName,Group,Tags,Description`，保证 OpenSSH 不会因升级而拒绝连接。新格式注释不会触发写入。
 
 ## Import / Export
 
@@ -65,7 +64,6 @@ Hosta 永不把整个 `~/.ssh/config` 当生成物。未来只管理 `~/.ssh/hos
     "identity": "work-default"
   },
   "group": "work",
-  "tags": ["production", "api"],
   "description": "Primary API host",
   "updatedAt": "2026-09-14T10:20:13Z",
   "updatedBy": "device-ulid",

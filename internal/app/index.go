@@ -25,7 +25,6 @@ func IndexFromSSHConfig(config *sshconfig.Config) (*host.Index, error) {
 			Aliases:     append([]string(nil), value.Aliases...),
 			DisplayName: value.DisplayName,
 			Group:       value.Group,
-			Tags:        append([]string(nil), value.Tags...),
 			Description: value.Description,
 			Preview: host.Preview{
 				HostName: value.HostName,

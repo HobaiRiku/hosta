@@ -56,8 +56,8 @@ CONTEXT.md               领域术语表
 2. **Native SSH Config 默认只读**（ADR 0002）：Hosta 自有数据将来放在独立的 Hosta Store。目前唯一的写入是 `sshconfig.EnsureLegacyCompatibility` 为旧式元数据插入 `IgnoreUnknown`，且必须走同目录临时文件 + atomic rename（`replace_unix.go` / `replace_windows.go`）。
 3. **Parser 不做 map merge**：保留 directive 顺序、作用域、源文件和行号；相对 Include 以 `~/.ssh` 为基准，glob 按字典序展开；依赖目标 Host 的 token 无法静态展开时产生诊断而非猜测。
 4. **Host 发现规则**：只收录不含通配符且未被 `!` 否定的显式 pattern；`Host *`、wildcard、`Match` 保留在来源模型中，但不进入 Launcher。重复 alias 保留全部来源，索引层只产生一个候选。
-5. **Host 元数据**使用 `# @hosta.*` 结构化注释；旧的 `DisplayName/Group/Tags/Description` 自定义 directive 仅做兼容读取。
-6. **搜索**：权重 Alias 100、DisplayName 90、Tags 70、Group 60、HostName Preview 50、Description 30；排序必须确定；按 rune 而非 UTF-8 byte 评分。
+5. **Host 元数据**使用 `# @hosta.*` 结构化注释；旧的 `DisplayName/Group/Description` 自定义 directive 仅做兼容读取。旧的 `Tags` directive 仅保留 OpenSSH 忽略保护，不再进入 Host 数据。
+6. **搜索**：权重 Alias 100、DisplayName 90、Group 60、HostName Preview 50、Description 30；排序必须确定；按 rune 而非 UTF-8 byte 评分。
 7. **进程调用安全**：外部命令一律使用参数数组，不经 shell 拼接；alias 需防止被当作选项注入。
 8. **进程模型**：Unix 优先进程替换以继承 TTY、信号、窗口尺寸和退出码；Windows 使用子进程继承 stdio 并透传退出码。平台差异通过 `_unix.go` / `_windows.go` 构建标签隔离。
 9. **启动路径不访问网络**；日志/输出不得包含秘密或敏感环境变量；秘密永不进入未来的同步域（ADR 0003）。

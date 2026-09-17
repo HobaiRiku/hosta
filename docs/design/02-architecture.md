@@ -99,7 +99,6 @@ type Host struct {
     Alias       string
     DisplayName string
     Group       string
-    Tags        []string
     Description string
     Preview     Preview
     Sources     []SourceLocation
@@ -107,7 +106,7 @@ type Host struct {
 }
 ```
 
-Preview 仅来自轻量解析，允许不完整；`show` 才调用 `ssh -G`。默认搜索权重：Alias 100、DisplayName 90、Tags 70、Group 60、HostName Preview 50、Description 30。算法必须正确处理 Unicode，不能按 UTF-8 byte 评分。
+Preview 仅来自轻量解析，允许不完整；`show` 才调用 `ssh -G`。默认搜索权重：Alias 100、DisplayName 90、Group 60、HostName Preview 50、Description 30。算法必须正确处理 Unicode，不能按 UTF-8 byte 评分。
 
 ## 错误与非功能约束
 

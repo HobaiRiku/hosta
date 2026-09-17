@@ -80,7 +80,6 @@ type jsonHost struct {
 	Aliases     []string `json:"aliases,omitempty"`
 	DisplayName string   `json:"displayName,omitempty"`
 	Group       string   `json:"group,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
 	Description string   `json:"description,omitempty"`
 	HostName    string   `json:"hostName,omitempty"`
 	User        string   `json:"user,omitempty"`
@@ -96,7 +95,6 @@ func writeHostJSON(w io.Writer, hosts []host.Host) error {
 			Aliases:     append([]string(nil), value.Aliases...),
 			DisplayName: value.DisplayName,
 			Group:       value.Group,
-			Tags:        append([]string(nil), value.Tags...),
 			Description: value.Description,
 			HostName:    value.Preview.HostName,
 			User:        value.Preview.User,
@@ -129,7 +127,7 @@ func writeHostDetails(w io.Writer, value host.Host, resolved openssh.Resolved) e
 		name = value.Alias
 	}
 	table := tabwriter.NewWriter(w, 0, 4, 2, ' ', 0)
-	if _, err := fmt.Fprintf(table, "%s\n\nAlias\t%s\nAliases\t%s\nGroup\t%s\nTags\t%s\nDescription\t%s\n\nSSH (resolved by OpenSSH)\nHostName\t%s\nUser\t%s\nPort\t%s\n", name, value.Alias, strings.Join(value.Aliases, " "), value.Group, strings.Join(value.Tags, " "), value.Description, resolved.HostName, resolved.User, resolved.Port); err != nil {
+	if _, err := fmt.Fprintf(table, "%s\n\nAlias\t%s\nAliases\t%s\nGroup\t%s\nDescription\t%s\n\nSSH (resolved by OpenSSH)\nHostName\t%s\nUser\t%s\nPort\t%s\n", name, value.Alias, strings.Join(value.Aliases, " "), value.Group, value.Description, resolved.HostName, resolved.User, resolved.Port); err != nil {
 		return err
 	}
 	for _, identity := range resolved.IdentityFiles {

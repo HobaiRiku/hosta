@@ -109,10 +109,27 @@ func (c *Client) Resolve(ctx context.Context, alias, configPath string, explicit
 }
 
 func (c *Client) Connect(ctx context.Context, alias, configPath string, explicitConfig bool) error {
+	return c.connect(ctx, alias, configPath, explicitConfig, false)
+}
+
+// ConnectInteractive clears the local terminal only after OpenSSH has
+// successfully established the connection. It is used after the launcher
+// displays its connecting status so a completed SSH session starts cleanly.
+func (c *Client) ConnectInteractive(ctx context.Context, alias, configPath string, explicitConfig bool) error {
+	return c.connect(ctx, alias, configPath, explicitConfig, true)
+}
+
+func (c *Client) connect(ctx context.Context, alias, configPath string, explicitConfig, clearAfterConnect bool) error {
 	if err := ValidateAlias(alias); err != nil {
 		return err
 	}
 	args := appendConfig(nil, configPath, explicitConfig)
+	if clearAfterConnect {
+		args = append(args,
+			"-o", "PermitLocalCommand=yes",
+			"-o", "LocalCommand="+platform.ClearAfterConnectCommand(),
+		)
+	}
 	args = append(args, "--", alias)
 	if err := c.runner.Interactive(ctx, c.binary, args); err != nil {
 		return fmt.Errorf("run OpenSSH: %w", err)

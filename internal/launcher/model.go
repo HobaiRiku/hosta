@@ -33,17 +33,19 @@ var (
 )
 
 type model struct {
-	input    textinput.Model
-	index    *host.Index
-	results  []host.Result
-	cursor   int
-	width    int
-	height   int
-	details  bool
-	selected string
-	notice   string
-	copy     func(string) error
-	command  func(string) (string, error)
+	input      textinput.Model
+	groupInput textinput.Model
+	groupFocus bool
+	index      *host.Index
+	results    []host.Result
+	cursor     int
+	width      int
+	height     int
+	details    bool
+	selected   string
+	notice     string
+	copy       func(string) error
+	command    func(string) (string, error)
 }
 
 func newModel(index *host.Index) model {
@@ -63,7 +65,10 @@ func newModelWithCommand(index *host.Index, copyToClipboard func(string) error, 
 	input.Prompt = accentStyle.Render("Search") + "  "
 	input.Placeholder = "type to filter hosts"
 	input.Focus()
-	m := model{input: input, index: index, width: 80, height: 24, copy: copyToClipboard, command: commandForAlias}
+	groupInput := textinput.New()
+	groupInput.Prompt = accentStyle.Render("Group") + "   "
+	groupInput.Placeholder = "type to filter groups"
+	m := model{input: input, groupInput: groupInput, index: index, width: 80, height: 24, copy: copyToClipboard, command: commandForAlias}
 	m.refresh()
 	return m
 }
@@ -85,9 +90,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.input.SetWidth(max(10, msg.Width-10))
+		m.groupInput.SetWidth(max(10, msg.Width-10))
 		return m, nil
 	case tea.KeyPressMsg:
 		m.notice = ""
+		if m.groupFocus {
+			switch msg.String() {
+			case "ctrl+c":
+				return m, tea.Quit
+			case "esc":
+				if m.groupInput.Value() != "" {
+					m.groupInput.SetValue("")
+					m.refresh()
+					return m, nil
+				}
+				m.groupFocus = false
+				m.groupInput.Blur()
+				m.input.Focus()
+				return m, nil
+			case "enter":
+				m.groupFocus = false
+				m.groupInput.Blur()
+				m.input.Focus()
+				return m, nil
+			}
+			previous := m.groupInput.Value()
+			var cmd tea.Cmd
+			m.groupInput, cmd = m.groupInput.Update(msg)
+			if m.groupInput.Value() != previous {
+				m.refresh()
+			}
+			return m, cmd
+		}
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
@@ -123,6 +157,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.notice = "Preparing SSH command..."
 			return m, copyCommand(m.copy, m.command, m.results[m.cursor].Host.Alias)
+		case "ctrl+]":
+			m.groupFocus = true
+			m.input.Blur()
+			m.groupInput.Focus()
+			return m, nil
 		}
 	}
 
@@ -138,8 +177,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() tea.View {
 	var content strings.Builder
 	title := titleStyle.Render("Hosta")
-	count := metadataStyle.Render(fmt.Sprintf("%d hosts", len(m.results)))
-	fmt.Fprintf(&content, "%s%s%s\n\n%s\n\n", title, strings.Repeat(" ", max(1, m.width-lipgloss.Width(title)-lipgloss.Width(count))), count, m.input.View())
+	countLabel := fmt.Sprintf("%d hosts", len(m.results))
+	if group := strings.TrimSpace(m.groupInput.Value()); group != "" {
+		countLabel += "  Group: " + group
+	}
+	count := metadataStyle.Render(countLabel)
+	activeInput := m.input
+	if m.groupFocus {
+		activeInput = m.groupInput
+	}
+	fmt.Fprintf(&content, "%s%s%s\n\n%s\n\n", title, strings.Repeat(" ", max(1, m.width-lipgloss.Width(title)-lipgloss.Width(count))), count, activeInput.View())
 
 	if len(m.results) == 0 {
 		if m.index.Len() == 0 {
@@ -157,7 +204,11 @@ func (m model) View() tea.View {
 	if m.notice != "" {
 		content.WriteString("\n" + noticeStyle.Render(m.notice))
 	}
-	content.WriteString("\n" + metadataStyle.Render("↑↓ select  •  Enter connect  •  Ctrl+Y copy SSH command  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"))
+	help := "↑↓ select  •  Enter connect  •  Ctrl+] group filter  •  Ctrl+Y copy SSH command  •  Esc clear/quit  •  Tab details  •  Ctrl+C quit"
+	if m.groupFocus {
+		help = "Enter apply group filter  •  Esc clear/return  •  Ctrl+C quit"
+	}
+	content.WriteString("\n" + metadataStyle.Render(help))
 	view := tea.NewView(content.String())
 	view.AltScreen = true
 	return view
@@ -180,6 +231,15 @@ func copyCommand(copyToClipboard func(string) error, commandForAlias func(string
 
 func (m *model) refresh() {
 	m.results = m.index.Search(m.input.Value(), 0)
+	if group := strings.ToLower(strings.TrimSpace(m.groupInput.Value())); group != "" {
+		filtered := m.results[:0]
+		for _, result := range m.results {
+			if strings.Contains(strings.ToLower(result.Host.Group), group) {
+				filtered = append(filtered, result)
+			}
+		}
+		m.results = filtered
+	}
 	m.cursor = 0
 }
 
@@ -261,11 +321,7 @@ func (m model) styleRow(value string, selected bool) string {
 }
 
 func hostMetadata(value host.Host) string {
-	metadata := append([]string(nil), value.Tags...)
-	if value.Group != "" {
-		metadata = append([]string{value.Group}, metadata...)
-	}
-	return strings.Join(metadata, " · ")
+	return value.Group
 }
 
 func displayAliases(value host.Host) string {

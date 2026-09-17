@@ -5,6 +5,8 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/HobaiRiku/hosta/internal/platform"
 )
 
 type fakeRunner struct {
@@ -51,6 +53,23 @@ func TestConnectDoesNotForceDefaultConfig(t *testing.T) {
 		t.Fatalf("Connect() error = %v", err)
 	}
 	if want := []string{"--", "home"}; !reflect.DeepEqual(runner.interactiveArgs, want) {
+		t.Fatalf("args = %#v, want %#v", runner.interactiveArgs, want)
+	}
+}
+
+func TestConnectInteractiveClearsAfterSuccessfulConnection(t *testing.T) {
+	runner := &fakeRunner{}
+	client, _ := New("ssh", runner)
+	if err := client.ConnectInteractive(context.Background(), "home", "/tmp/config", true); err != nil {
+		t.Fatalf("ConnectInteractive() error = %v", err)
+	}
+	want := []string{
+		"-F", "/tmp/config",
+		"-o", "PermitLocalCommand=yes",
+		"-o", "LocalCommand=" + platform.ClearAfterConnectCommand(),
+		"--", "home",
+	}
+	if !reflect.DeepEqual(runner.interactiveArgs, want) {
 		t.Fatalf("args = %#v, want %#v", runner.interactiveArgs, want)
 	}
 }

@@ -1,7 +1,6 @@
 Host demo
     # @hosta.display-name Demo Server
     # @hosta.group examples
-    # @hosta.tags demo documentation
     # @hosta.description Non-routable smoke-test host
     HostName demo.example.com
     User demo-user

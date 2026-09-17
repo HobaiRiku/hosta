@@ -90,7 +90,7 @@ hosta completion zsh
 
 This writes `~/.hosta_completion_zsh` and adds an idempotent source block to `~/.zshrc`. Use `--stdout` to print the script instead.
 
-In the interactive launcher, press `Ctrl+Y` to copy the selected host's resolved `ssh -p <port> <user>@<host>` command.
+In the interactive launcher, press `Ctrl+]` to open the Group filter, type a Group name, then press Enter to return to Host selection with that filter applied. `Esc` clears the Group filter or returns to host search. Press `Ctrl+Y` to copy the selected host's resolved `ssh -p <port> <user>@<host>` command. After you press Enter, Hosta displays `Connecting to <host> ...` and clears the terminal once OpenSSH establishes the session.
 
 ## Development
 

@@ -19,7 +19,7 @@ func TestInitialView(t *testing.T) {
 		t.Fatal("launcher must use the alternate screen buffer")
 	}
 	view := result.Content
-	for _, want := range []string{"Hosta", "Search", "2 hosts", "Home Server", "home", "root@home.example.com:22", "personal · home"} {
+	for _, want := range []string{"Hosta", "Search", "2 hosts", "Home Server", "home", "root@home.example.com:22", "personal"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("view %q does not contain %q", view, want)
 		}
@@ -46,6 +46,42 @@ func TestNavigationAndSelection(t *testing.T) {
 	m = next.(model)
 	if m.selected != "router" || command == nil {
 		t.Fatalf("selected = %q, command = %v", m.selected, command)
+	}
+}
+
+func TestGroupFilterInputFiltersAsYouType(t *testing.T) {
+	index, err := host.NewIndex([]host.Host{
+		{Alias: "home", Group: "personal"},
+		{Alias: "prod", Group: "work"},
+		{Alias: "stage", Group: "work"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := newModel(index)
+	next, _ := m.Update(tea.KeyPressMsg{Code: ']', Mod: tea.ModCtrl})
+	m = next.(model)
+	if !m.groupFocus {
+		t.Fatal("group input is not focused")
+	}
+	next, _ = m.Update(tea.KeyPressMsg{Code: 'w', Text: "w"})
+	next, _ = next.(model).Update(tea.KeyPressMsg{Code: 'o', Text: "o"})
+	m = next.(model)
+	if m.groupInput.Value() != "wo" || len(m.results) != 2 || m.results[0].Host.Alias != "prod" || m.results[1].Host.Alias != "stage" {
+		t.Fatalf("group = %q, results = %#v", m.groupInput.Value(), m.results)
+	}
+	next, command := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	m = next.(model)
+	if m.groupFocus || command != nil || m.selected != "" {
+		t.Fatalf("group focus = %v, selected = %q, command = %v", m.groupFocus, m.selected, command)
+	}
+}
+
+func TestCtrlBracketOpensGroupFilter(t *testing.T) {
+	m := newModel(testIndex(t))
+	next, _ := m.Update(tea.KeyPressMsg{Code: ']', Mod: tea.ModCtrl})
+	if !next.(model).groupFocus {
+		t.Fatal("Ctrl+] did not open group input")
 	}
 }
 
@@ -124,10 +160,10 @@ func TestSmallTerminalUsesCompactRows(t *testing.T) {
 func TestDefaultRowsUseOneLinePerHost(t *testing.T) {
 	m := newModel(testIndex(t))
 	view := ansi.Strip(m.View().Content)
-	if !strings.Contains(view, "Home Server  home  root@home.example.com:22  personal · home") {
+	if !strings.Contains(view, "Home Server  home  root@home.example.com:22  personal") {
 		t.Fatalf("selected row = %q", view)
 	}
-	if !strings.Contains(view, "路由器  router  192.0.2.1  personal · network") {
+	if !strings.Contains(view, "路由器  router  192.0.2.1  personal") {
 		t.Fatalf("unselected row = %q", view)
 	}
 }
@@ -169,8 +205,8 @@ func TestRunRejectsNonTTY(t *testing.T) {
 func testIndex(t *testing.T) *host.Index {
 	t.Helper()
 	index, err := host.NewIndex([]host.Host{
-		{Alias: "home", DisplayName: "Home Server", Group: "personal", Tags: []string{"home"}, Preview: host.Preview{HostName: "home.example.com", User: "root", Port: "22"}},
-		{Alias: "router", DisplayName: "路由器", Group: "personal", Tags: []string{"network"}, Preview: host.Preview{HostName: "192.0.2.1"}},
+		{Alias: "home", DisplayName: "Home Server", Group: "personal", Preview: host.Preview{HostName: "home.example.com", User: "root", Port: "22"}},
+		{Alias: "router", DisplayName: "路由器", Group: "personal", Preview: host.Preview{HostName: "192.0.2.1"}},
 	})
 	if err != nil {
 		t.Fatal(err)
